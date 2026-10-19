@@ -83,6 +83,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         await stampActivity({...base,sessionKey:session,hostPid:owner.pid,hostStartTime:owner.startTime,driverId:driver.id,driverVersion:driver.version});
         const discovery=await discoverRuns({...base,sessionKey:session});
         const table=await adapter.list(),seen=table.filter(row=>/chrom/i.test(row.executable||'')&&row.argv?.some(arg=>arg.startsWith('--user-data-dir'))).map(row=>({pid:row.pid,flags:row.argv.filter(arg=>/^--(remote-debugging|user-data-dir)/.test(arg)),chain:ancestors(row.pid,table).rows.slice(0,5).map(up=>({pid:up.pid,startTime:up.startTime,exe:basename(up.executable||''),args:(up.argv||[]).slice(1,3).map(arg=>arg.slice(-70))}))}));
+        for(const row of seen)for(const up of row.chain)if(/agent-browser/.test(up.exe))up.environ=await readFile(`/proc/${up.pid}/environ`,'utf8').then(text=>text.split('\0').filter(entry=>/^AGENT_BROWSER_/.test(entry)).map(entry=>entry.split('=')[0]+(entry.startsWith('AGENT_BROWSER_SESSION=')?`:${entry.slice(22)===handle.p0?.token?'equals-run-token':'other'}`:'')),error=>error.code);
         assert.equal(discovery.discovered.length,1,`E1_RECIPE: expected one attributed ${driver.id} browser; driver ${driver.version}; chrome roots ${JSON.stringify(seen)}`);
         handle.record=discovery.discovered[0];
       }

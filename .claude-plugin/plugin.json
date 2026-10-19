@@ -1,0 +1,9 @@
+{
+  "name": "browser-control-layer",
+  "version": "0.1.0",
+  "description": "Browser control skill pack for AI agents: route web jobs, batch steps, hand clicks to a fresh runner, and close and check what it opens.",
+  "skills": "./skills/",
+  "agents": [
+    "./agents/aun-runner-browser.md"
+  ]
+}

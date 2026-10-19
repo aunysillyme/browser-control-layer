@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "skillName": "browser-control-layer",
+  "packageVersion": "0.1.0",
+  "assets": [
+    {
+      "path": "checklists/route.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "checklists/run.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/01-cost-model.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/02-route-by-job.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/03-batch-first.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/04-close-what-you-open.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/05-resources.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/06-profiles-and-site-rules.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "method/07-verify-and-report.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/fetch-order.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/indexed-actions.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/remote-browser.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/scoped-extraction.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/snapshot-refs.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/stop-rules.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "playbooks/wait-for-element.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "references/defaults.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "references/drivers.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "runners/aun-runner-browser.template.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "runners/brief.template.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "runners/report.template.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    },
+    {
+      "path": "SKILL.md",
+      "active": true,
+      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+    }
+  ],
+  "stageRoutes": [
+    {
+      "id": "frame",
+      "assets": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "id": "route",
+      "assets": [
+        "checklists/route.md",
+        "method/02-route-by-job.md"
+      ]
+    },
+    {
+      "id": "pick",
+      "assets": [
+        "method/06-profiles-and-site-rules.md"
+      ]
+    },
+    {
+      "id": "batch",
+      "assets": [
+        "method/03-batch-first.md",
+        "runners/brief.template.md"
+      ]
+    },
+    {
+      "id": "run",
+      "assets": [
+        "runners/aun-runner-browser.template.md",
+        "playbooks/stop-rules.md"
+      ]
+    },
+    {
+      "id": "read",
+      "assets": [
+        "playbooks/fetch-order.md"
+      ]
+    },
+    {
+      "id": "verify",
+      "assets": [
+        "method/07-verify-and-report.md"
+      ]
+    },
+    {
+      "id": "clean",
+      "assets": [
+        "method/04-close-what-you-open.md",
+        "method/05-resources.md"
+      ]
+    },
+    {
+      "id": "report",
+      "assets": [
+        "runners/report.template.md"
+      ]
+    }
+  ],
+  "bundles": {},
+  "budgets": {
+    "skillBytes": 6144,
+    "routeBytes": 20480,
+    "activeBytes": 81920,
+    "runnerBytes": 4096,
+    "briefBytes": 2048
+  },
+  "claims": []
+}

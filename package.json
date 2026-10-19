@@ -1,0 +1,64 @@
+{
+  "name": "browser-control-layer",
+  "version": "0.1.0",
+  "description": "Browser control skill pack for AI agents: route web jobs, batch steps, hand clicks to a fresh runner, and close and check what it opens.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "browser-control-layer": "bin/browser-control-layer.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test",
+    "typecheck": "tsc --checkJs --noEmit"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "skills/",
+    "adapters/",
+    "hooks/",
+    "agents/",
+    "bench/",
+    "evals/",
+    "docs/",
+    "!docs/*.gif",
+    "README.md",
+    "LICENSE",
+    "CLA.md",
+    "CHANGELOG.md",
+    "CREDITS.md",
+    "SECURITY.md",
+    "llms.txt",
+    ".claude-plugin/",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "MAINTAINERS.md",
+    "RELEASING.md",
+    "REPO_SETTINGS.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aunysillyme/browser-control-layer.git"
+  },
+  "keywords": [
+    "browser-control",
+    "agent-skills",
+    "browser-automation",
+    "claude-code",
+    "codex"
+  ],
+  "funding": "https://github.com/sponsors/aunysillyme",
+  "bugs": {
+    "url": "https://github.com/aunysillyme/browser-control-layer/issues"
+  }
+}

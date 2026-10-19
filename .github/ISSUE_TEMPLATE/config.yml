@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Method and usage documentation
+    url: https://github.com/aunysillyme/browser-control-layer/blob/main/docs/METHOD.md
+    about: Read the method, adapters and tool limits first.
+  - name: Private vulnerability report
+    url: https://github.com/aunysillyme/browser-control-layer/security/advisories/new
+    about: Opens a private advisory to the maintainers.
+  - name: Private conduct report
+    url: https://support.github.com/contact
+    about: Use GitHub private reporting for abuse. Do not post private details publicly.

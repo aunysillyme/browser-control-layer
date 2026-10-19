@@ -1,0 +1,13 @@
+{
+  "name": "browser-control-layer",
+  "owner": {
+    "name": "Auny LLC"
+  },
+  "plugins": [
+    {
+      "name": "browser-control-layer",
+      "source": "./",
+      "description": "Browser control skill pack for AI agents: route web jobs, batch steps, hand clicks to a fresh runner, and close and check what it opens."
+    }
+  ]
+}

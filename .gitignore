@@ -1,0 +1,7 @@
+check/forbidden.local.txt
+node_modules/
+proof/runs/
+.test-work/
+.build-local/
+.test-runs/
+*.tgz

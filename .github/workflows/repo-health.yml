@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "${{ github.workflow }}-${{ github.ref }}",
+    "cancel-in-progress": true
+  },
+  "name": "repo-health",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "jobs": {
+    "pending": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 2,
+      "steps": [
+        {
+          "run": "echo \"Implementation pending\"; exit 1"
+        }
+      ]
+    }
+  }
+}

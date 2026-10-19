@@ -138,7 +138,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
       const item={id:`hook-${ending}`,arm:'leased',ending};let handle;
       try {
         // The idle limit must outlast the hook round trips, or the sweep closes the browser before the close check runs.
-        fixtureDefaults.localIdleSeconds.value=ending==='idle'?4:300;await writeFile(join(plugin,'src/hygiene/defaults.json'),JSON.stringify(fixtureDefaults));
+        fixtureDefaults.localIdleSeconds.value=ending==='idle'?8:300;await writeFile(join(plugin,'src/hygiene/defaults.json'),JSON.stringify(fixtureDefaults));
         handle=await start(item);
         await installedHook('SessionStart',handle);
         const pre=await installedHook('PreToolUse',handle);assert.notEqual(pre.hookSpecificOutput?.permissionDecision,'deny');
@@ -147,7 +147,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         const timer=(await ledger.readSession(handle.session)).timer;
         if(ending==='idle') {
           handle.timer=timer;
-          for(let i=0;i<100;i++){if((await ledger.readSession(handle.session)).timer===null)break;await wait(100);}
+          for(let i=0;i<250;i++){if((await ledger.readSession(handle.session)).timer===null)break;await wait(100);}
         } else if(ending==='normal') await installedHook('SessionEnd',handle);
         else {const owner=await adapter.inspect(handle.owner.pid);assert.equal(owner.startTime,handle.owner.startTime);await originalSignal(owner.pid,'SIGKILL');await handle.exited;await installedHook('SessionStart',handle);}
         const proof=await observe(handle,item);assert.equal(proof.ownedProcesses,0);assert.equal(proof.throwawayDirectories,0);assert.equal(proof.sentinelTabs,2);

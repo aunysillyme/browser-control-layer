@@ -29,13 +29,13 @@ User/unrecognized resources are report-only. Persistent driver directories stay;
 
 [darwin.mjs](../src/proc/platform/darwin.mjs) reads `ps` identity/state. `-Eww` environment replies must name exactly the requested PID. Tokenless helpers need ancestry to the token-verified root. Conflicting tokens or live unreadable identities refuse group signals; zombies need none.
 
-Drivers need absolute entry scripts, allowing `.bin` and known non-evaluating Node switches. The pinned chrome-devtools-mcp title needs `ucomm=node` and `/usr/sbin/lsof`'s first text mapping matching Node's real path. PID/start/user/parent/group must survive those reads and final command inspection. Missing tools, denied reads or mismatches refuse attribution. Titles alone, JSON and argument references prove nothing. Version/profile/automation and stamped ancestry/session checks still apply. Owner exit needs a missing PID or changed start. Linux is unchanged.
+Node drivers need absolute entry scripts or the pinned title with `ucomm=node` and a first `lsof` text mapping to Node's real path. PID/start/user/parent/group and title must stay fixed across reads. Failed inspection refuses attribution. Version/profile/automation and stamped ancestry/session remain required. Owner exit needs a missing PID or changed start.
 
 [signals.mjs](../src/proc/signals.mjs) rechecks ownership before signals, refreshes inventory and drops departed helpers. macOS inspects arrivals once; further arrivals, replacements or failed reads refuse the group. Linux refuses arrivals. Survivors are rechecked after environment reads.
 
-macOS watches leased groups through TERM grace. Sent TERM plus fresh proof permit group KILL, then at most the same exit grace. Remaining rows, including zombies, keep cleanup incomplete and profiles intact. `remainingMembers` gives PID/parent/group/state/reason. Shipped grace awaits [evidence](DEFAULTS.md).
+macOS waits through TERM grace. Sent TERM plus fresh proof permit leased-group KILL and exit grace. Survivors, including zombies, keep cleanup incomplete and profiles intact; `remainingMembers` lists identities/reasons. [Grace evidence](DEFAULTS.md).
 
-Dumps include member reasons and E1 command classification, excluding environments/tokens. Hand check: `node --test test/darwin.test.mjs test/darwin-recipes.test.mjs test/darwin-exit.test.mjs test/group-races.test.mjs test/group-diagnostics.test.mjs`. CI: [browser.yml](../.github/workflows/browser.yml). No separate recipe watcher runs.
+Dumps include member reasons and E1 command classification, excluding environments/tokens. Check: `node --test`; CI: [browser.yml](../.github/workflows/browser.yml). Nothing separately monitors recipes.
 
 ## Activity and triggers
 
@@ -58,7 +58,7 @@ Stamps renew matching session/host/driver records and leases. CLI: `AUN_SESSION_
 
 ## Idle and resource budgets
 
-[Idle expiry](../src/hygiene/idle.mjs) uses activity/lease renewal. The [timer](../src/hygiene/idle-timer.mjs) waits to its deadline, checks generation/token, reaps locally, clears its record and exits. New stamps cancel it after identity checks. Scheduled `reap --idle` is opt-in.
+[Idle expiry](../src/hygiene/idle.mjs) uses activity/lease renewal. The [timer](../src/hygiene/idle-timer.mjs) waits for its deadline and verified registration, checks generation/token, reaps locally, clears its record and exits. Pending registration gets bounded waits, then exits without reaping. Stamps cancel verified timers. Check: `node --test test/linux-idle.test.mjs`. Scheduled `reap --idle` is opt-in.
 
 [Settings](../src/hygiene/defaults.json) need [evidence](DEFAULTS.md); null stays pending. [Headroom](../src/hygiene/headroom.mjs) needs thresholds; [budgets](../src/hygiene/budget.mjs) need finite caps and CPU window/samples. `top` has no monitor. Leases measure groups; recipes measure roots.
 

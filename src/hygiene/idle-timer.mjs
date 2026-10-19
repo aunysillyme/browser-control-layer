@@ -66,8 +66,14 @@ export async function startIdleTimer({ ledger, sessionKey, processAdapter, idleS
 export async function runIdleTimer({ ledger, sessionKey, token, generation, deadline, processAdapter, now = Date.now, wait = ms => new Promise(resolve => setTimeout(resolve, ms)), termGraceMs, idleSeconds = localIdleSeconds, reapFn = reap }) {
   try {
     await wait(Math.max(0, deadline - now()));
-    const session = await ledger.readSession(sessionKey);
+    // Let the parent finish identity registration before an overdue reap.
+    let session = await ledger.readSession(sessionKey);
+    for (let attempt = 0; session?.generation === generation && session?.timer?.token === token && session.timer.pending && attempt < 40; attempt++) {
+      await wait(25);
+      session = await ledger.readSession(sessionKey);
+    }
     if (session?.generation !== generation || session?.timer?.token !== token) return { fired: false, reason: 'activity-renewed' };
+    if (session.timer.pending) return { fired: false, reason: 'timer-identity-unverified' };
     const result = await reapFn({ ledger, sessionKey, processAdapter, mode: 'idle', now, allowRemote: false, termGraceMs, idleSeconds });
     return { fired: true, result };
   } finally {

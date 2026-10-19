@@ -108,7 +108,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
       await ledger.update(handle.record.id,row=>({...row,lastActivity:now,leaseRenewedAt:now}));
       await ledger.updateSession(handle.session,row=>({...row,lastActivity:now,generation:row?.generation||0}));
       const timer=await startIdleTimer({...options,idleSeconds:300});handle.timer=timer;
-      assert.equal(timer.started,true,'idle timer started');
+      assert.equal(timer.started,true,`idle timer started: ${timer.reason || 'unverified'}`);
       if(idleObservationMs)await wait(idleObservationMs);
       for(let i=0;i<100;i++){if((await ledger.readSession(handle.session))?.timer===null)break;await wait(100);}
       handle.result={remaining:(await adapter.inspect(handle.record.pid))?1:0};

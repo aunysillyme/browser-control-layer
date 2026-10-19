@@ -33,7 +33,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
   const plugin=join(root,'plugin');
   for(const path of ['src','hooks','skills','package.json','bench/drivers.json'])await cp(join(ROOT,path),join(plugin,path),{recursive:true});
   const fixtureDefaults=JSON.parse(await readFile(join(plugin,'src/hygiene/defaults.json'),'utf8'));
-  fixtureDefaults.termGraceMs.value=1000;fixtureDefaults.localIdleSeconds.value=1;
+  fixtureDefaults.termGraceMs.value=1000;fixtureDefaults.localIdleSeconds.value=300;
   await writeFile(join(plugin,'src/hygiene/defaults.json'),JSON.stringify(fixtureDefaults));
   const hookManifest=JSON.parse(await readFile(join(plugin,'hooks/hooks.json'),'utf8'));
   async function installedHook(event,handle) {
@@ -129,11 +129,13 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
     for(const ending of scriptedHooks?['normal','SIGKILL','idle']:[]) {
       const item={id:`hook-${ending}`,arm:'leased',ending};let handle;
       try {
+        // The idle limit must outlast the hook round trips, or the sweep closes the browser before the close check runs.
+        fixtureDefaults.localIdleSeconds.value=ending==='idle'?4:300;await writeFile(join(plugin,'src/hygiene/defaults.json'),JSON.stringify(fixtureDefaults));
         handle=await start(item);
         await installedHook('SessionStart',handle);
         const pre=await installedHook('PreToolUse',handle);assert.notEqual(pre.hookSpecificOutput?.permissionDecision,'deny');
         await installedHook('PostToolUse',handle);
-        const stop=await installedHook('Stop',handle);assert.equal(stop.decision,'block','installed close check blocks once');
+        const stop=await installedHook('Stop',handle);assert.equal(stop.decision,'block',`installed close check blocks once; hook said ${JSON.stringify(stop)}; ledger ${JSON.stringify((await ledger.list()).filter(row=>row.sessionKey===handle.session).map(row=>({status:row.status,closedAt:row.closedAt,pid:row.pid})))}`);
         const timer=(await ledger.readSession(handle.session)).timer;
         if(ending==='idle') {
           handle.timer=timer;
@@ -142,7 +144,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         else {const owner=await adapter.inspect(handle.owner.pid);assert.equal(owner.startTime,handle.owner.startTime);await originalSignal(owner.pid,'SIGKILL');await handle.exited;await installedHook('SessionStart',handle);}
         const proof=await observe(handle,item);assert.equal(proof.ownedProcesses,0);assert.equal(proof.throwawayDirectories,0);assert.equal(proof.sentinelTabs,2);
         if(ending==='idle')assert.equal(proof.timerExited,true);
-        rows.push({...item,...proof,scriptedHooks:true,fixtureOverrides:{localIdleSeconds:1,termGraceMs:1000},status:'passed'});
+        rows.push({...item,...proof,scriptedHooks:true,fixtureOverrides:{localIdleSeconds:fixtureDefaults.localIdleSeconds.value,termGraceMs:1000},status:'passed'});
       } catch(error){rows.push({...item,scriptedHooks:true,status:'failed',error:{message:error.message,stack:error.stack}});}
       finally{if(handle)await dispose(handle);}
     }

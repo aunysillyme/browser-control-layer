@@ -25,6 +25,18 @@
           "description": "Exact reviewed browser fixture version",
           "type": "string",
           "required": false
+        },
+        "run_p0": {
+          "description": "Run the P0 baseline on Linux (about 35 minutes; plan step 3 runs it once)",
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        "run_macos": {
+          "description": "Also run the macOS jobs while the repository is private",
+          "type": "boolean",
+          "required": false,
+          "default": false
         }
       }
     }
@@ -71,11 +83,12 @@
             "if-no-files-found": "error"
           }
         }
-      ]
+      ],
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_p0"
     },
     "p0-macos": {
       "name": "P0 baseline (macOS)",
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false",
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false",
       "runs-on": "macos-latest",
       "timeout-minutes": 180,
       "permissions": {
@@ -228,7 +241,7 @@
           }
         }
       ],
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false"
     },
     "lifecycle-linux": {
       "runs-on": "ubuntu-latest",
@@ -364,7 +377,7 @@
           }
         }
       ],
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false"
     },
     "h-rows-linux": {
       "runs-on": "ubuntu-latest",
@@ -536,7 +549,7 @@
           }
         }
       ],
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false"
     },
     "h-rows-macos": {
       "runs-on": "macos-latest",
@@ -579,7 +592,7 @@
           }
         }
       ],
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false"
     },
     "r-rows-macos": {
       "runs-on": "macos-latest",
@@ -622,7 +635,7 @@
           }
         }
       ],
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false"
     }
   }
 }

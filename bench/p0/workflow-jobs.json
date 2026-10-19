@@ -41,11 +41,12 @@
             "if-no-files-found": "error"
           }
         }
-      ]
+      ],
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_p0"
     },
     "p0-macos": {
       "name": "P0 baseline (macOS)",
-      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false",
+      "if": "github.event_name == 'workflow_dispatch' && inputs.run_macos || github.event.repository.private == false",
       "runs-on": "macos-latest",
       "timeout-minutes": 180,
       "permissions": {

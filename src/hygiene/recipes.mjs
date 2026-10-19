@@ -15,7 +15,7 @@ export const RECIPES = Object.freeze(catalog.drivers.map(driver => ({
   profileClass: driver.variants[0].profileClass,
   source: driver.source, verification: catalog.verification,
   driverExecutables: [process.execPath],
-  driverArg: arg => arg.replaceAll('\\', '/').includes(`/${driver.package}/`) || arg.replaceAll('\\', '/').endsWith(`/${driver.command}`),
+  driverArg: arg => arg === driver.command || arg.replaceAll('\\', '/').includes(`/${driver.package}/`) || arg.replaceAll('\\', '/').endsWith(`/${driver.command}`),
   matchesProfile: profile => profilePatterns[driver.id]?.test(profile.replaceAll('\\', '/')) === true
 })));
 

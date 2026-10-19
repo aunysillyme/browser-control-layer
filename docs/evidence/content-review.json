@@ -6,19 +6,19 @@
       "reason": "independent content review not run; WAIVED never blocks"
     },
     "CREDITS.md": {
-      "sha256": "c35d18403c66b8019e99b158e75e6213c5550f59142efb9b013d7866c7cf00e1",
+      "sha256": "ce303f1ae42b9afb6c326898d97b5980ec8a7b925f49452e3f63308aa03ebcee",
       "disposition": "WAIVED",
-      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/METHOD.md": {
       "sha256": "7210e3424bc953749a4c0e2897dc728de021488e4a3753c1dd79440dc2cd1d44",
       "disposition": "WAIVED",
-      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/PROVENANCE.md": {
       "sha256": "f660e226163186a38af75db8d40c5bdcd87cceb70cda4f17e6fb93828228db62",
       "disposition": "WAIVED",
-      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "adapters/agents-md.md": {
       "sha256": "b31195b9bf60394473102686a0468af7308a615dcdabcde6d66e9db300ec2b39",
@@ -53,20 +53,75 @@
     "docs/DEFAULTS.md": {
       "sha256": "679ff0a8563ded71301a2ee24addd3f36188d04e2953c8a1a3ae93a6a93bde2c",
       "disposition": "WAIVED",
-      "reason": "Generated from repository sources; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/RESULTS.md": {
-      "sha256": "7a045053813ade7c3cb6494f778be6554fa0af09db33ff1e1fb3c93908c27249",
+      "sha256": "0953218ea3bc4af3ab2cad24c2ed5a8c611aa5e803b1761bc29eb2e004970928",
       "disposition": "WAIVED",
-      "reason": "Generated from repository sources; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/INSTALLER.md": {
-      "sha256": "a605d03b36bd6ca599e7fb9733cbe971c5b71017b70d6246907692ad6fd827de",
+      "sha256": "d50ee6831a723b294b8d51aa579a91ad2021ed452f83afb243b630b7185c6ea9",
       "disposition": "WAIVED",
-      "reason": "Generated from repository sources; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/ROADMAP.md": {
       "sha256": "3effa79c637c559644917a33b83ee3b347028c099a9c77fedb0ded5bc59e5f87",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/HYGIENE.md": {
+      "sha256": "c4693601d2e461cfa1ad20a38ea86b28b8ba6c04b1e26751045be341646286a0",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/READER.md": {
+      "sha256": "f993682131563e5c166f6634a9823a61b3f80ab999c68f2c67725fba8532ec75",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/BENCHMARK.md": {
+      "sha256": "82dcc04b5bbd886fefebe041a2ea44869d442f3464516f43b27e80e07246f6df",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/README.md": {
+      "sha256": "9f8bce8429ffbc0bbab2cd0dc54e1cdecb8eb5ea9aaf41e1693bef6618f0a19a",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/DRIVERS.md": {
+      "sha256": "afdeed2d0841b7c9402551cb5147d596be4d450d38b0247eec952ccef58a606c",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/METER.md": {
+      "sha256": "0c15127444a59c5b7d0043d458a8fffdb1f164a4ce578598ce018a64f12ebfd5",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/HOOKS.md": {
+      "sha256": "a50fdb7363ad67969137fb295dacec30251e0f7d3a2c8f8bf039911fc1a54833",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/COMPATIBILITY.md": {
+      "sha256": "8cdb288affbd941365b219f2337b9c0b5b27028ecf34a16260b4c92ff0831972",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/SECURITY-MODEL.md": {
+      "sha256": "edd6fe3a515df09ac6117a3de1b9c0948f62fafb5350373391dabf2734f2149e",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/EVALUATION.md": {
+      "sha256": "bb40f466bcd7d4e2cb47b473c3febd5e023bdc5d41009ec5ec51101b90edfeb2",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
+    },
+    "docs/evaluation/host-gate.md": {
+      "sha256": "7321099034f7e21eba96f5545803b823da7b5b906935eabd9252b2fec5373762",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     }

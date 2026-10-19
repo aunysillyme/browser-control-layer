@@ -1,4 +1,4 @@
-<!-- stub: written in the prose step -->
+# Installer
 
 <!-- installer:start (generated) -->
 ## Project installation

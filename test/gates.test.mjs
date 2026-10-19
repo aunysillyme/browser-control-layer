@@ -100,7 +100,12 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
       assert.equal(invoke(['--stdin','--only','PRIVACY'],'Auny LLC').status,0);
       assert.equal(invoke(['--stdin','--only','VOICE'],String.fromCharCode(0x2014)).status,1);
       assert.equal(invoke(['--only','UNKNOWN'],'').status,2);
-      assert.equal(invoke(['--release'],'').status,1);
+      assert.equal(invoke(['--release'],'').status,0);
+      const original=readFileSync(join(root,'docs/RESULTS.md'),'utf8');
+      try {
+        put(root,'docs/RESULTS.md',STUB+'\n');
+        assert.equal(invoke(['--release'],'').status,1);
+      } finally { put(root,'docs/RESULTS.md',original); }
     });
   } finally { rmSync(root,{recursive:true,force:true}); }
 });

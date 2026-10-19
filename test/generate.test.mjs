@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { config } from '../src/config.mjs';
 import { catalog,renderRunner } from '../src/install/catalog.mjs';
 import { proofBlock,generatedPack } from '../src/build/pack.mjs';
-import { generateDrivers } from '../src/build/drivers.mjs';
+import { generateDrivers } from '../src/build/bundle.mjs';
 const cfg=config(), template=readFileSync(`${cfg.core}/runners/aun-runner-browser.template.md`,'utf8');
 test('all host runners replace exactly supported fields and fit budget',()=>{
   for(const host of catalog(cfg)) {

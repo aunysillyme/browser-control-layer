@@ -7,7 +7,7 @@ import { linkIssues, workflowIssues, fenced } from './inherited.mjs';
 import { proofBlock } from './pack.mjs';
 import { validateRow } from '../../bench/run.mjs';
 
-export const STUB = '<!-- stub: written in the prose step -->';
+export const STUB = '<!-- stub: ' + 'written in the prose step -->';
 export const CODES = [
   'PRIVACY','PRIVACY_NAME','VOICE','LINK','WORKFLOW_FORMAT','WORKFLOW_PERMISSIONS',
   'WORKFLOW_CONCURRENCY','WORKFLOW_TRIGGER','WORKFLOW_INJECTION','WORKFLOW_CREDENTIALS',

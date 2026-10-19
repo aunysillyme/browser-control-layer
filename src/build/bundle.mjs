@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto';
 import { config } from '../config.mjs';
 import { generatedPack } from './pack.mjs';
 import { generateDefaults } from './defaults.mjs';
-import { generateDrivers } from './drivers.mjs';
 
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export function owned(root, name) {
@@ -42,4 +41,12 @@ export function generated(root) {
     }).join('\n');
   }
   return {...output,...generateDefaults(root),...generateDrivers(root),...generatedPack(root)};
+}
+
+export function generateDrivers(root) {
+  const { core }=config(root), data=JSON.parse(read(root,'bench/drivers.json'));
+  const rows=[...data.drivers,data.browser];
+  const cell=value=>String(value).replaceAll('|','&#124;').replace(/[\r\n]/g,' ');
+  const body='# Installed browser drivers\n\nGenerated from `bench/drivers.json`. The benchmark detects installed tools and prints vendor install commands. Pins are test conditions; the registry verification label is `'+data.verification+'`.\n\n| Driver | Pin | Source |\n|---|---|---|\n'+rows.map(row=>`| ${cell(row.package)} | ${cell(row.version)} | [Vendor](${cell(row.source)}) |`).join('\n')+'\n';
+  return {[`${core}/references/drivers.md`]:body};
 }

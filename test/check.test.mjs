@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, renameSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { check, contentIssues, normalize, termMatches } from '../src/build/validate.mjs';
+import { check, contentIssues, normalize, termMatches, STUB } from '../src/build/validate.mjs';
 import { digest, files } from '../src/build/bundle.mjs';
 import { spawnSync } from 'node:child_process';
 import { linkIssues } from '../src/build/inherited.mjs';
@@ -50,7 +50,9 @@ test('renamed tree passes NAME_PARAM and all current checks without local privat
     }
     const built=spawnSync(process.execPath,['scripts/build.mjs'],{cwd:root,encoding:'utf8'});
     assert.equal(built.status,0,built.stderr);
-    assert.ok(check(root,{release:true}).issues.some(s=>s.includes('stub remains')));
+    assert.ok(!check(root,{release:true}).issues.some(s=>s.includes('stub remains')));
+    writeFileSync(join(root,'docs/RESULTS.md'),STUB+'\n');
+    assert.ok(check(root,{release:true}).issues.some(s=>s==='FLOOR:docs/RESULTS.md:stub remains'));
   } finally { rmSync(root,{recursive:true,force:true}); }
 });
 test('LINK validates local files and headings with a refusing case',()=>{

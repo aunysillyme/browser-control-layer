@@ -1,4 +1,22 @@
 {
-  "description": "aun-cleanup browser lifecycle hooks",
-  "hooks": {}
+  "description": "aun-pick-guard, aun-retry-guard, aun-batch-nudge and aun-cleanup browser hooks",
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "^(mcp__(playwright|playwright-mcp|playwright_mcp|browser)__browser_.*|mcp__(chrome-devtools|chrome_devtools|chrome-devtools-mcp|chrome_devtools_mcp)__.*|Bash)$",
+      "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" pre" }]
+    }],
+    "PostToolUse": [{
+      "matcher": "^(mcp__(playwright|playwright-mcp|playwright_mcp|browser)__browser_.*|mcp__(chrome-devtools|chrome_devtools|chrome-devtools-mcp|chrome_devtools_mcp)__.*|Bash)$",
+      "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" post" }]
+    }],
+    "PostToolUseFailure": [{
+      "matcher": "^(mcp__(playwright|playwright-mcp|playwright_mcp|browser)__browser_.*|mcp__(chrome-devtools|chrome_devtools|chrome-devtools-mcp|chrome_devtools_mcp)__.*|Bash)$",
+      "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" failure" }]
+    }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" stop" }] }],
+    "SubagentStop": [{ "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" subagent-stop" }] }],
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" start" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" prompt" }] }],
+    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/src/hooks/cli.mjs\" end" }] }]
+  }
 }

@@ -1,0 +1,17 @@
+{
+  "provenance": "synthetic contract examples; real host capture pending",
+  "verification": "HOST_TRIAL_UNVERIFIED",
+  "payloads": {
+    "pre": { "hook_event_name": "PreToolUse", "session_id": "fixture-session", "tool_name": "mcp__playwright__browser_navigate", "tool_input": { "url": "https://example.com", "isolated": true }, "tool_use_id": "tool-1" },
+    "post": { "hook_event_name": "PostToolUse", "session_id": "fixture-session", "host_pid": 42, "tool_name": "mcp__playwright__browser_snapshot", "tool_input": {}, "tool_response": { "content": "page evidence" } },
+    "failure": { "hook_event_name": "PostToolUseFailure", "session_id": "fixture-session", "host_pid": 42, "tool_name": "mcp__playwright__browser_click", "tool_input": { "ref": "button-1" }, "error": "synthetic stale reference" },
+    "stop": { "hook_event_name": "Stop", "session_id": "fixture-session", "stop_hook_active": false },
+    "subagent": { "hook_event_name": "SubagentStop", "session_id": "fixture-session", "agent_id": "agent-1", "stop_hook_active": false },
+    "subagentParent": { "hook_event_name": "SubagentStop", "session_id": "child-session", "parent_session_id": "fixture-session", "agent_id": "agent-1", "stop_hook_active": false },
+    "start": { "hook_event_name": "SessionStart", "session_id": "fixture-session", "source": "startup" },
+    "prompt": { "hook_event_name": "UserPromptSubmit", "session_id": "fixture-session", "prompt": "continue the public page task" },
+    "end": { "hook_event_name": "SessionEnd", "session_id": "fixture-session", "reason": "prompt_input_exit" },
+    "bash": { "hook_event_name": "PreToolUse", "session_id": "fixture-session", "tool_name": "Bash", "tool_input": { "command": "agent-browser --isolated open https://example.com" } },
+    "unrelated": { "hook_event_name": "PreToolUse", "session_id": "fixture-session", "tool_name": "Bash", "tool_input": { "command": "printf hello" } }
+  }
+}

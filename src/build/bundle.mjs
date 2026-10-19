@@ -23,7 +23,7 @@ export function files(root, directory = '') {
   for (const item of readdirSync(owned(root, directory || '.'), { withFileTypes: true }).sort((a,b) => a.name.localeCompare(b.name, 'en'))) {
     if (['.git', 'node_modules', '.venv', 'dist', 'build', '.test-work', '.build-local', '.test-runs'].includes(item.name) && directory !== 'src') continue;
     const name = directory ? `${directory}/${item.name}` : item.name;
-    if (name === 'check/forbidden.local.txt' || name.startsWith('proof/runs/')) continue;
+    if (name === 'check/forbidden.local.txt') continue;
     if (item.isSymbolicLink()) throw Error(`symlink in public tree: ${name}`);
     if (item.isDirectory()) out.push(...files(root, name));
     else if (item.isFile()) out.push(name);

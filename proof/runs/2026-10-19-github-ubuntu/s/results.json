@@ -1,0 +1,53 @@
+[
+  {
+    "id": "S1",
+    "subject": "package",
+    "claim": "screen quality",
+    "unit": "fraction",
+    "n": 2,
+    "median": 0.5,
+    "p25": 0.25,
+    "p75": 0.75,
+    "arms": [
+      {
+        "name": "recall",
+        "n": 1,
+        "median": 1,
+        "p25": 1,
+        "p75": 1
+      },
+      {
+        "name": "false-alarm",
+        "n": 1,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      }
+    ],
+    "ratio": 0,
+    "measured_at": "2026-10-19T08:49:50.153Z",
+    "expires_at": "2026-12-18T08:49:50.153Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite S --n 3",
+    "raw": {
+      "path": "proof/runs/s/raw.jsonl",
+      "sha256": "579bec222abd27f8b56a25197d3aa27eb8b3a6dc4e6e2b50c1ffb96226406574"
+    }
+  }
+]

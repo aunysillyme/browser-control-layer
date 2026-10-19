@@ -15,7 +15,11 @@
 <!-- trailer: restored when docs/trailer.gif lands -->
 
 <!-- proof:start (generated; package rows only) -->
-Measurements await a completed benchmark. Rerun: `npx browser-control-layer bench hygiene`.
+| Row | Measurement | Median | Date | Rerun |
+|---|---|---|---|---|
+| E1 | crash matrix | 0 processes | 2026-10-19T08:53:51.000Z | `npx browser-control-layer bench hygiene --suite E1 --n 3` |
+| H4 | sentinel safety | 0 processes | 2026-10-19T08:49:58.776Z | `npx browser-control-layer bench hygiene --suite H --n 3` |
+| S1 | screen quality | 0.5 fraction | 2026-10-19T08:49:50.153Z | `npx browser-control-layer bench hygiene --suite S --n 3` |
 <!-- proof:end -->
 
 This release works on public pages, in isolated or throwaway browser profiles, and leaves your own Chrome profile untouched. The package closes the browsers it can prove it owns. A browser from a driver it does not recognize is listed by `doctor` and left running.
@@ -87,6 +91,7 @@ On every host, run `npx browser-control-layer doctor` to see the browsers runnin
 Here is one cleanup line from a CI fixture run:
 
 <!-- capture:start -->
+`cleanup: browsers=1/1 tabs=UNVERIFIED/0 sessions=UNVERIFIED/0 remaining=0 checks=ps`
 <!-- capture:end -->
 
 ## Part of a set

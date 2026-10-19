@@ -7,7 +7,7 @@ Generated from recorded benchmark rows and dated primary documentation. Unmeasur
 | localIdleSeconds | 300 | [Primary documentation](https://github.com/trycua/cua) (2026-10-18) |
 | remoteIdleSeconds | 60 | [Primary documentation](https://developers.cloudflare.com/browser-rendering/platform/limits/) (2026-10-18) |
 | remoteFreeConcurrency | 3 | [Primary documentation](https://developers.cloudflare.com/browser-rendering/platform/limits/) (2026-10-18) |
-| waitCap | unset | Awaiting R4 |
+| waitCap | 8 | row: R4 (2026-10-19) |
 | repeatNavigateCap | unset | Awaiting R4 |
 | emptyReadCap | unset | Awaiting R4 |
 | browserCap | unset | Awaiting R2 |

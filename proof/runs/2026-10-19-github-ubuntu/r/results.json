@@ -1,0 +1,453 @@
+[
+  {
+    "id": "R1",
+    "subject": "default",
+    "claim": "browser mode",
+    "unit": "ms",
+    "n": 9,
+    "median": 666.375413,
+    "p25": 279.3897389999984,
+    "p75": 750.2233040000028,
+    "arms": [
+      {
+        "name": "shell",
+        "n": 3,
+        "median": 259.92933099999993,
+        "p25": 254.85316649999942,
+        "p75": 269.65953499999915
+      },
+      {
+        "name": "true",
+        "n": 3,
+        "median": 666.375413,
+        "p25": 645.898917499998,
+        "p75": 672.7846979999987
+      },
+      {
+        "name": "false",
+        "n": 3,
+        "median": 795.428018999999,
+        "p25": 772.8256615000009,
+        "p75": 874.2500089999994
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    }
+  },
+  {
+    "id": "R2",
+    "subject": "default",
+    "claim": "browser allocation",
+    "unit": "bytes",
+    "n": 18,
+    "median": 1250682880,
+    "p25": 1000112128,
+    "p75": 1972786176,
+    "arms": [
+      {
+        "name": "tabs-1",
+        "n": 3,
+        "median": 1000067072,
+        "p25": 995811328,
+        "p75": 1000157184
+      },
+      {
+        "name": "browsers-1",
+        "n": 3,
+        "median": 998633472,
+        "p25": 998033408,
+        "p75": 998897664
+      },
+      {
+        "name": "tabs-2",
+        "n": 3,
+        "median": 1120440320,
+        "p25": 1118910464,
+        "p75": 1127270400
+      },
+      {
+        "name": "browsers-2",
+        "n": 3,
+        "median": 1979949056,
+        "p25": 1965623296,
+        "p75": 1980915712
+      },
+      {
+        "name": "tabs-4",
+        "n": 3,
+        "median": 1368870912,
+        "p25": 1368068096,
+        "p75": 1371953152
+      },
+      {
+        "name": "browsers-4",
+        "n": 3,
+        "median": 3952259072,
+        "p25": 3944747008,
+        "p75": 3956731904
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    }
+  },
+  {
+    "id": "R3",
+    "subject": "default",
+    "claim": "media requests",
+    "unit": "bytes",
+    "n": 6,
+    "median": 66359.5,
+    "p25": 667,
+    "p75": 132052,
+    "arms": [
+      {
+        "name": "allowed",
+        "n": 3,
+        "median": 132052,
+        "p25": 132052,
+        "p75": 132052
+      },
+      {
+        "name": "blocked",
+        "n": 3,
+        "median": 667,
+        "p25": 667,
+        "p75": 667
+      }
+    ],
+    "ratio": 0.005051040499197286,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    }
+  },
+  {
+    "id": "R4",
+    "subject": "default",
+    "claim": "wait strategy",
+    "unit": "ms",
+    "n": 21,
+    "median": 784.8413609999989,
+    "p25": 249.13715099999536,
+    "p75": 805.6146100000042,
+    "arms": [
+      {
+        "name": "sleep",
+        "n": 3,
+        "median": 1551.0419189999993,
+        "p25": 1546.9742690000003,
+        "p75": 1552.2338719999989
+      },
+      {
+        "name": "element",
+        "n": 3,
+        "median": 792.4341770000028,
+        "p25": 791.2479244999995,
+        "p75": 793.7768135000006
+      },
+      {
+        "name": "loop-cap-1",
+        "n": 3,
+        "median": 153.97140700000455,
+        "p25": 151.10581450000245,
+        "p75": 155.58836150000207
+      },
+      {
+        "name": "loop-cap-2",
+        "n": 3,
+        "median": 248.21002900000894,
+        "p25": 245.75595600000452,
+        "p75": 248.67359000000215
+      },
+      {
+        "name": "loop-cap-4",
+        "n": 3,
+        "median": 446.57361200000014,
+        "p25": 446.1250189999955,
+        "p75": 447.87697599999956
+      },
+      {
+        "name": "loop-cap-8",
+        "n": 3,
+        "median": 784.8413609999989,
+        "p25": 784.108189999999,
+        "p75": 785.8345669999981
+      },
+      {
+        "name": "loop-refusal",
+        "n": 3,
+        "median": 806.9470600000059,
+        "p25": 806.280835000005,
+        "p75": 808.0558165000039
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    },
+    "defaults": {
+      "waitCap": 8
+    }
+  },
+  {
+    "id": "R5",
+    "subject": "default",
+    "claim": "extraction size",
+    "unit": "bytes",
+    "n": 9,
+    "median": 34,
+    "p25": 16,
+    "p75": 8838,
+    "arms": [
+      {
+        "name": "fields",
+        "n": 3,
+        "median": 16,
+        "p25": 16,
+        "p75": 16
+      },
+      {
+        "name": "text",
+        "n": 3,
+        "median": 34,
+        "p25": 34,
+        "p75": 34
+      },
+      {
+        "name": "screenshot",
+        "n": 3,
+        "median": 8838,
+        "p25": 8838,
+        "p75": 8838
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    }
+  },
+  {
+    "id": "R6",
+    "subject": "default",
+    "claim": "concurrency",
+    "unit": "ms",
+    "n": 9,
+    "median": 240.66621999999916,
+    "p25": 140.1403500000015,
+    "p75": 410.29327999999805,
+    "arms": [
+      {
+        "name": "1",
+        "n": 3,
+        "median": 132.09355099999812,
+        "p25": 127.93592400000125,
+        "p75": 136.1169504999998
+      },
+      {
+        "name": "2",
+        "n": 3,
+        "median": 240.66621999999916,
+        "p25": 233.41935749999902,
+        "p75": 243.10350250000192
+      },
+      {
+        "name": "4",
+        "n": 3,
+        "median": 422.57753700000467,
+        "p25": 416.43540850000136,
+        "p75": 433.6832510000022
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    }
+  },
+  {
+    "id": "R7",
+    "subject": "default",
+    "claim": "idle tabs",
+    "unit": "bytes",
+    "n": 9,
+    "median": 2522345472,
+    "p25": 2416861184,
+    "p75": 2547392512,
+    "arms": [
+      {
+        "name": "idle",
+        "n": 3,
+        "median": 2533044224,
+        "p25": 2501339136,
+        "p75": 2540218368
+      },
+      {
+        "name": "blank",
+        "n": 3,
+        "median": 2599620608,
+        "p25": 2560983040,
+        "p75": 2601216000
+      },
+      {
+        "name": "closed",
+        "n": 3,
+        "median": 2376552448,
+        "p25": 2332893184,
+        "p75": 2396706816
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:51:02.162Z",
+    "expires_at": "2026-12-18T08:51:02.162Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite R --n 3",
+    "raw": {
+      "path": "proof/runs/r/raw.jsonl",
+      "sha256": "1a50a46b5e3ab745ba0152b0fc3e4127a82cdf6197fbaafc2064e6b57d2c3748"
+    }
+  }
+]

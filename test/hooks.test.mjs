@@ -125,7 +125,14 @@ test('CLI pick guard GREEN stores a browser session and RED refuses a session sw
 });
 
 test('retry caps remain unset until measured rows exist', () => {
-  assert.ok(Object.values(loopLimits).every(value => value === null));
+  if (loopLimits.waitCap !== null) {
+    assert.equal(typeof loopLimits.waitCap, 'number');
+    assert.equal(loopLimits.repeatNavigateCap, null);
+    assert.equal(loopLimits.emptyReadCap, null);
+    assert.equal(loopLimits.identicalErrorCap, null);
+  } else {
+    assert.ok(Object.values(loopLimits).every(value => value === null));
+  }
   assert.equal(batchLimits.streakCap, null);
 });
 

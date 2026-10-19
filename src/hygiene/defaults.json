@@ -25,9 +25,11 @@
     "date": "2026-10-18"
   },
   "waitCap": {
-    "value": null,
-    "source": null,
-    "date": null,
+    "value": 8,
+    "source": {
+      "row": "R4"
+    },
+    "date": "2026-10-19",
     "needs": "R4"
   },
   "repeatNavigateCap": {

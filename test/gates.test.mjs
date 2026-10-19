@@ -72,8 +72,9 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
     },()=>{const ledger=json(base,'docs/evidence/content-review.json'); ledger.files['README.md']={sha256:digest(readFileSync(join(root,'README.md'))),disposition:'WAIVED',reason:'Synthetic gate fixture'};put(root,'docs/evidence/content-review.json',ledger);});
     const raw='{}\n', row={id:'H5',subject:'package',claim:'Measured fixture',unit:'processes',n:1,median:0,p25:0,p75:0,arms:[{name:'baseline',median:0},{name:'package',median:0}],ratio:null,machine:{os:'fixture',cpu:'fixture',ram_gb:1},versions:{node:'22',chrome:'1',driver:'1',harness:null,model_id:null},command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:digest(raw)},measured_at:'2026-01-01',expires_at:'2099-01-01'};
     await pair('PROOF_BINDING',['README.md'],()=>put(root,'README.md',STUB+'\n40% fewer tokens\n'),()=>put(root,'README.md',STUB+'\nRead public pages.\n'));
-    await pair('PROOF_SCOPE',['README.md','proof/results.json','proof/raw.jsonl'],()=>{
+    await pair('PROOF_SCOPE',['README.md','docs/RESULTS.md','llms.txt','proof/results.json','proof/raw.jsonl'],()=>{
       put(root,'proof/raw.jsonl',raw); put(root,'proof/results.json',[{...row,subject:'default'}]); put(root,'README.md',STUB+'\n<!-- proof:start -->\n| H5 | 4 |\n<!-- proof:end -->\n');
+      put(root,'docs/RESULTS.md',STUB+'\n'); put(root,'llms.txt',STUB+'\n');
     },()=>put(root,'proof/results.json',[row]));
     await pair('HOOK_LATENCY',['proof/results.json','proof/raw.jsonl'],()=>{put(root,'proof/raw.jsonl',raw);put(root,'proof/results.json',[{...row,hook_p95_ms:151}]);},()=>put(root,'proof/results.json',[{...row,hook_p95_ms:100}]));
     await t.test('expired rendered proof warns without failing checks or release',()=>{

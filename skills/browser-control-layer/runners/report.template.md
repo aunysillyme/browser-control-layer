@@ -10,7 +10,7 @@ Evidence:
 Actions:
 | # | Action | Rung | Effect |
 |---|---|---|---|
-| 1 | <what was done> | <read | reference | script | position | hand back> | <confirmed | no-change | partial | unknown> |
+| 1 | <what was done> | <read | reference | script | position | hand back> | <confirmed | partial | unverifiable | suspected_noop | refused> |
 
 Stop or hand-back: <rule that fired, what the page showed, what the user can do>
 
@@ -21,12 +21,12 @@ Cost: <line from meter, when it ran>
 
 ## Fields
 
-- **Effect** comes from a fresh observation after the action. An `ok` from a tool proves the call ran. `unknown` means no observation followed; observe, then set the status.
+- **Effect** uses the statuses defined in `method/07-verify-and-report.md`. An `ok` from a tool proves the call ran. Record `unverifiable` when evidence cannot establish the effect.
 - **Rung** names the step of the action ladder (`playbooks/snapshot-refs.md`).
 - **Cleanup line** comes last. Run {{CLEANUP_COMMAND}} first and copy its line. A probe that could not run prints `UNVERIFIED` in `checks`, and `remaining` above zero means the run is not clean.
 - **Cost** appears when `meter` ran for this session.
 
 ## Reading a report
 
-- DONE is a claim; verify it against the page or a saved read before you pass it on.
+- DONE requires `confirmed` plus a passing postcondition check against the page or a saved read before you pass it on.
 - A line with `remaining=0` and every check named is a clean close.

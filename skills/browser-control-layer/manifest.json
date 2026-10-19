@@ -11,7 +11,7 @@
     {
       "path": "checklists/run.md",
       "active": true,
-      "sha256": "a2f87998016e73dc572a63a0432367dfb76d2086757bf1d9ffc513a588ec5f3f"
+      "sha256": "2828e196f7903a2721bef1d351c238b6bc6bb6a32c972bd889f195939768d76e"
     },
     {
       "path": "method/01-cost-model.md",
@@ -46,7 +46,7 @@
     {
       "path": "method/07-verify-and-report.md",
       "active": true,
-      "sha256": "9a99665bb1b4188396ae10f565fc13b639709f82bbd3e2ac871c29892cc0bbb0"
+      "sha256": "19e78595165b161b5a5e78d7518977c2faff0d869b1343ab20119bca7445edd7"
     },
     {
       "path": "playbooks/fetch-order.md",
@@ -71,7 +71,7 @@
     {
       "path": "playbooks/snapshot-refs.md",
       "active": true,
-      "sha256": "0018678cc1cc7ef9f445687034704c274050f32f54188ada880a97a4da953864"
+      "sha256": "c5a2a21eaf9dcf928358f3a720382e16e78cda1f4717b90b6fbfec7e2479f94b"
     },
     {
       "path": "playbooks/stop-rules.md",
@@ -96,7 +96,7 @@
     {
       "path": "runners/aun-runner-browser.template.md",
       "active": true,
-      "sha256": "a868e77593e624d53a1215af124de064329fff14c525525af6a675323f807107"
+      "sha256": "0a88e1318ca8144353fbd202d9ada104edd61905c234124565de8392b0e1b76d"
     },
     {
       "path": "runners/brief.template.md",
@@ -106,7 +106,7 @@
     {
       "path": "runners/report.template.md",
       "active": true,
-      "sha256": "879f92fe92a5c7359709fb00a9d1866a9a015e44a4a5cafa52185ffc5dd4aab1"
+      "sha256": "9fc7c5f2575567ec654775945beb8f3850f3f515969e8b3445afbb0fb858342e"
     },
     {
       "path": "SKILL.md",

@@ -6,14 +6,15 @@ A runner's DONE is a claim. The main session checks it against the page, a saved
 
 ## Effect statuses
 
-Every action in the report carries an `effect` that comes from looking again after the action:
+Every action in the report carries an `effect` based on the available evidence:
 
 - `confirmed`: a fresh observation shows the change the action was meant to make.
-- `no-change`: a fresh observation shows the page as before.
 - `partial`: part of the intended change appears.
-- `unknown`: no fresh observation followed.
+- `unverifiable`: available evidence cannot establish the action's effect.
+- `suspected_noop`: the action ran, but a fresh observation suggests no change.
+- `refused`: the action was declined or blocked before execution.
 
-An action is not complete until its effect is `confirmed`. An `unknown` effect is a to-do: observe, then set the status. Statuses follow the effect idea in trycua/cua (gate VF02).
+Only `confirmed` plus a passing postcondition check counts as done. For `unverifiable`, seek a fresh observation and update the status when evidence is available. Statuses use the vocabulary from [trycua/cua](https://github.com/trycua/cua) (gate VF02).
 
 ## What the evidence looks like
 

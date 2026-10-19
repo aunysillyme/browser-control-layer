@@ -39,7 +39,7 @@ One line per gate code. A run is attributable: a failure names its code. Go in s
 ## Verify (`method/07-verify-and-report.md`)
 
 - VF01: the runner's DONE was checked independently.
-- VF02: every action has an effect from a fresh observation.
+- VF02: every action has an effect status; done requires `confirmed` plus a passing postcondition check.
 
 ## Clean (`method/04-close-what-you-open.md`, `method/05-resources.md`)
 

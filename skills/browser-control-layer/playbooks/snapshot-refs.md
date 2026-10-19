@@ -16,7 +16,7 @@ Background-first: prefer rungs that work without bringing a window forward or ta
 
 ## Escalation
 
-- A rung that returns `no-change` earns one retry at most, with a fresh observation in between.
+- A rung that returns `suspected_noop` earns one retry at most, with a fresh observation in between.
 - Move up one rung at a time. Record each move in the report.
 - Rung 5 is a normal ending for a step that needs the user's hands (a payment form, a confirmation control, a bot check).
 
@@ -35,4 +35,4 @@ Within a batch, refer to an element by a reference only for steps that cannot ch
 
 ## Effects
 
-Each action gets an `effect` after a fresh observation (`method/07-verify-and-report.md`).
+Each action gets an `effect` based on the available evidence; use `unverifiable` when the effect cannot be established (`method/07-verify-and-report.md`).

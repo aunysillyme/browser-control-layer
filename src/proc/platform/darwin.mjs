@@ -4,24 +4,29 @@ const exec = promisify(execFile);
 
 export function parseProcessTable(text) {
   return text.split('\n').filter(line => line.trim()).map(line => {
-    const match = line.match(/^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\w{3}\s+\w{3}\s+\d+\s+[\d:]+\s+\d{4})\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(.*)$/);
+    const match = line.match(/^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\w{3}\s+\w{3}\s+\d+\s+[\d:]+\s+\d{4})\s+(\d+)\s+([\d.]+)\s+(\d+)\s+(?:([IRUSTZ][sSEJNVWXL+<>-]*)\s+)?(.*)$/);
     if (!match) return { pid: Number(line.trim().split(/\s+/)[0]), readable: false, reason: 'PROCESS_FORMAT' };
-    const [, pid, ppid, pgid, startTime, uid, cpuPercent, rssKiB, command] = match;
+    const [, pid, ppid, pgid, startTime, uid, cpuPercent, rssKiB, state, command] = match;
     // ps cannot preserve argv boundaries. The root profile flag is parsed only
     // when its absolute value has an unambiguous end at the next option.
     const profile = command.match(/(?:^|\s)--user-data-dir=(\/.*?)(?=\s--|$)/)?.[1];
     // A worker's JSON arguments can contain an app path. It is not its executable.
     const app = command.match(/^(\/[^"'{}\n]*?\.app\/Contents\/MacOS\/[^]*?)(?=\s--|$)/)?.[1];
-    const node = command.match(/^(node)\s+\/[^\s"'{}]+(?=\s|$)/)?.[1];
+    const node = command.match(/^(node)\s+(?:(?:--no-warnings|--enable-source-maps|--experimental-network-inspection|--disable-warning=[\w]+)\s+)*\/[^\s"'{}]+(?=\s|$)/)?.[1];
     const executable = (app && !/\s\//.test(app) ? app : null) || command.match(/^(\/\S+)(?=\s|$)/)?.[1] || node;
     const flags = command.match(/--[\w-]+(?:=[^\s]+)?/g) || [];
     const argv = executable ? [executable, ...flags.filter(arg => !arg.startsWith('--user-data-dir'))] : [];
     // Preserve an unambiguous absolute entry script for driver ancestry. ps
     // cannot recover paths containing spaces, so those remain report-only.
-    const script=executable && command.slice(executable.length).match(/^\s+(\/[^\s"'{}]+)(?=\s|$)/)?.[1];
+    const tail = executable && command.slice(executable.length);
+    // Only non-evaluating Node switches may precede an entry script. Values of
+    // eval, import or arbitrary flags are never evidence of a driver script.
+    const script = tail && (/^(?:node|.*\/node)$/.test(executable)
+      ? tail.match(/^\s+(?:(?:--no-warnings|--enable-source-maps|--experimental-network-inspection|--disable-warning=[\w]+)\s+)*(\/[^\s"'{}]+)(?=\s|$)/)?.[1]
+      : tail.match(/^\s+(\/[^\s"'{}]+)(?=\s|$)/)?.[1]);
     if (script) argv.splice(1,0,script);
     if (profile) argv.push(`--user-data-dir=${profile}`);
-    return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, executable, argv, command, platform: 'darwin', identityReadable: true, readable: Boolean(executable) };
+    return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, ...(state ? { state: state[0] } : {}), executable, argv, entryScript: script || null, command, platform: 'darwin', identityReadable: true, readable: Boolean(executable), reason: executable ? undefined : 'PROCESS_ARGV', commandKind: /^node(?:\s|$)/.test(command) ? script ? 'node-entry' : 'node-command' : executable ? 'absolute-command' : 'unparsed-command' };
   });
 }
 
@@ -39,13 +44,13 @@ export function darwinAdapter({ run = exec, signal = process.kill.bind(process) 
     } catch { return null; }
   }
   async function list() {
-    const result = await run('/bin/ps', ['-Aww', '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
+    const result = await run('/bin/ps', ['-Aww', '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,state=,command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
     return parseProcessTable(result.stdout);
   }
   return { platform: 'darwin', list, async inspect(pid) {
     if (!Number.isInteger(pid) || pid <= 0) return null;
     try {
-      const result = await run('/bin/ps', ['-ww', '-p', String(pid), '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,command='], { timeout: 1500, maxBuffer: 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
+      const result = await run('/bin/ps', ['-ww', '-p', String(pid), '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,state=,command='], { timeout: 1500, maxBuffer: 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
       const rows = parseProcessTable(result.stdout);
       if (!rows.length) return null;
       return rows.length === 1 && rows[0].pid === pid ? rows[0] : { pid, readable: false, reason: 'PROCESS_INSPECT' };

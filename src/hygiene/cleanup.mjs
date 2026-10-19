@@ -15,6 +15,24 @@ import defaults from './defaults.json' with { type: 'json' };
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const atTime = now => typeof now === 'function' ? now() : now;
 
+// Observe asynchronous macOS exit for at most the configured grace per signal.
+// Keep every remaining row, including zombies, until the kernel removes it.
+async function waitForDarwinExit(record, options, grace) {
+  if (!Number.isFinite(grace) || grace <= 0) return;
+  const deadline = performance.now() + grace;
+  let requested = 0;
+  while (requested < grace && performance.now() < deadline) {
+    const root = await inspect(options.processAdapter, record.pid);
+    const table = await processTable(options.processAdapter);
+    if (!table.verified || root?.readable === false && root.state !== 'Z') return;
+    if (!root && !table.rows.some(row => row.pid === record.pid || record.kind === 'leased' && row.pgid === record.pgid)) return;
+    const delay = Math.min(100, grace - requested, Math.max(0, deadline - performance.now()));
+    if (delay <= 0) return;
+    await (options.sleep || sleep)(delay);
+    requested += delay;
+  }
+}
+
 export async function removeThrowaway(record, options) {
   const { ledger, processAdapter, profileOptions = {} } = options;
   if (record.profileClass !== PROFILE.THROWAWAY || isUserProfile(record.userDataDir, profileOptions)) return { removed: false, reason: 'profile-kept' };
@@ -109,10 +127,16 @@ export async function cleanup(input) {
       if (members) { record.members = members; await ledger.update(record.id, old => ({ ...old, members })); }
       action.signal = await signalOwned(record, { ...options, group: record.kind === 'leased', signal: 'SIGTERM' });
       const grace = options.termGraceMs ?? defaults.termGraceMs.value;
-      if (action.signal.sent && Number.isFinite(grace) && grace >= 0) await (options.sleep || sleep)(grace);
+      if (action.signal.sent && Number.isFinite(grace) && grace >= 0) {
+        if (processAdapter.platform === 'darwin') await waitForDarwinExit(record, options, grace);
+        else await (options.sleep || sleep)(grace);
+      }
       if (record.daemon) action.driverClose = await closeDaemonSession(record, proof, options);
       const after = await inspect(processAdapter, record.pid);
-      if (after && record.kind === 'leased' && Number.isFinite(grace) && grace >= 0) action.escalation = await signalOwned(record, { ...options, group: true, signal: 'SIGKILL' });
+      if (after && record.kind === 'leased' && Number.isFinite(grace) && grace >= 0 && (processAdapter.platform !== 'darwin' || action.signal.sent)) {
+        action.escalation = await signalOwned(record, { ...options, group: true, signal: 'SIGKILL' });
+        if (processAdapter.platform === 'darwin' && action.escalation.sent) await waitForDarwinExit(record, options, grace);
+      }
     } else if (proof.gone && record.kind === 'leased') action.survivors = await signalLeasedSurvivors(record, options);
     const after = await inspect(processAdapter, record.pid);
     const final = await processTable(processAdapter);
@@ -123,7 +147,11 @@ export async function cleanup(input) {
       action.closed = true;
       await ledger.update(record.id, old => ({ ...old, closedAt: atTime(now), status: 'closed', profileRemoved: action.profile.removed }));
       if (mode === 'idle') await ledger.updateSession(record.sessionKey, old => ({ ...old, idleNotice: { closedAt: atTime(now), idleSeconds: idleStatus(record, { now: atTime(now) }).idleSeconds, temporaryStateGone: action.profile.removed } }));
-    } else { result.remaining++; action.reason = after?.readable === false || !final.verified ? 'UNVERIFIED' : 'process-remains'; }
+    } else {
+      result.remaining++;
+      action.reason = after?.readable === false || !final.verified ? 'UNVERIFIED' : 'process-remains';
+      if (processAdapter.platform === 'darwin') action.remainingMembers = final.rows.filter(row => row.pid === record.pid || record.kind === 'leased' && row.pgid === record.pgid).map(row => ({ pid: row.pid, ppid: row.ppid, pgid: row.pgid, state: row.state, readable: row.readable, reason: row.reason }));
+    }
     result.actions.push(action);
   }
   if (options.probeTabs) {

@@ -74,6 +74,28 @@ test('GREEN Darwin Node entry scripts and worker JSON keep their command boundar
   assert.deepEqual(worker.argv, ['/fixture/node', '/fixture/worker.mjs']);
 });
 
+for (const item of crashMatrix({ drivers: RECIPES }).filter(row => row.driver === 'chrome-devtools-mcp')) test(`GREEN Darwin ${item.id} attributes a Node driver behind non-evaluating startup flags`, async () => {
+  const f = await fixture(item.driver);
+  f.commands.set(200, line(200, 50, 'node --no-warnings --experimental-network-inspection /fixture/node_modules/chrome-devtools-mcp/build/src/index.js --headless'));
+  const discovery = await discoverRuns(f);
+  assert.equal(discovery.discovered.length, 1);
+  assert.equal(discovery.discovered[0].parentPid, 200);
+  assert.deepEqual(f.signals, []);
+});
+
+for (const command of [
+  'node --eval=/fixture/node_modules/chrome-devtools-mcp/build/src/index.js',
+  'node --import=/fixture/node_modules/chrome-devtools-mcp/build/src/index.js /fixture/other.js',
+  'node /fixture/other.js --path=/fixture/node_modules/chrome-devtools-mcp/build/src/index.js',
+  'node --unknown-option /fixture/node_modules/chrome-devtools-mcp/build/src/index.js',
+  'chrome-devtools-mcp'
+]) test(`RED Darwin driver attribution refuses a title or argument reference: ${command.split(' ').slice(0, 2).join(' ')}`, async () => {
+  const f = await fixture('chrome-devtools-mcp');
+  f.commands.set(200, line(200, 50, command));
+  assert.equal((await discoverRuns(f)).discovered.length, 0);
+  assert.deepEqual(f.signals, []);
+});
+
 for (const item of crashMatrix({ drivers: RECIPES }).filter(row => row.arm === 'unleased')) test(`GREEN Darwin ${item.id} ${item.driver} ${item.ending} meets the E1 pass line`, async () => {
   const f = await fixture(item.driver);
   const discovery = await discoverRuns(f);

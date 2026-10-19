@@ -1,4 +1,13 @@
 {
+  "name": "proof",
+  "on": {
+    "schedule": [
+      {
+        "cron": "17 5 * * 1"
+      }
+    ],
+    "workflow_dispatch": {}
+  },
   "permissions": {
     "contents": "read"
   },
@@ -6,17 +15,59 @@
     "group": "${{ github.workflow }}-${{ github.ref }}",
     "cancel-in-progress": true
   },
-  "name": "proof",
-  "on": {
-    "workflow_dispatch": {}
-  },
   "jobs": {
-    "pending": {
+    "refresh": {
       "runs-on": "ubuntu-latest",
-      "timeout-minutes": 2,
+      "timeout-minutes": 120,
+      "permissions": {
+        "contents": "write",
+        "pull-requests": "write"
+      },
       "steps": [
         {
-          "run": "echo \"Implementation pending\"; exit 1"
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install pinned CI drivers",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--no-save\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+        },
+        {
+          "name": "Measure fixtures and retain raw observations",
+          "run": "xvfb-run -a node bench/run.mjs hygiene --suite all --n 3 --out proof/runs/refreshed",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload rows and raw sha256",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "proof-refresh-${{ github.sha }}",
+            "path": "proof/runs/refreshed/",
+            "if-no-files-found": "error"
+          }
+        },
+        {
+          "name": "Refresh only measured rows and generated evidence",
+          "run": "node --input-type=module -e 'import {readFileSync,writeFileSync} from \"node:fs\"; const old=JSON.parse(readFileSync(\"proof/results.json\",\"utf8\")); const rows=JSON.parse(readFileSync(\"proof/runs/refreshed/results.json\",\"utf8\")); const previous=Array.isArray(old)?old:old.rows; const merged=[...previous.filter(r=>!rows.some(n=>n.id===r.id)),...rows]; writeFileSync(\"proof/results.json\",JSON.stringify(Array.isArray(old)?merged:{...old,rows:merged},null,2)+\"\\n\");'\nnode scripts/build.mjs --rehash\nnode scripts/check.mjs"
+        },
+        {
+          "name": "Open refreshed evidence as a pull request",
+          "env": {
+            "GH_TOKEN": "${{ github.token }}",
+            "RUN_ID": "${{ github.run_id }}"
+          },
+          "run": "git switch -c \"proof/refresh-$RUN_ID\"\ngit add proof/results.json README.md docs/RESULTS.md llms.txt docs/DEFAULTS.md skills src/hygiene/defaults.json docs/evidence/content-review.json\ngit add -f proof/runs/refreshed/raw.jsonl proof/runs/refreshed/raw.sha256 proof/runs/refreshed/results.json proof/runs/refreshed/e1/raw.jsonl proof/runs/refreshed/e1/raw.sha256 proof/runs/refreshed/idle/raw.jsonl proof/runs/refreshed/idle/raw.sha256\nif git diff --cached --quiet; then exit 0; fi\ngit -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'chore: refresh benchmark evidence'\ngh auth setup-git\ngit push origin \"HEAD:refs/heads/proof/refresh-$RUN_ID\"\ngh pr create --title 'Refresh benchmark evidence' --body 'Generated rows include raw SHA-256 receipts and rerun commands. Review before merging.' --head \"proof/refresh-$RUN_ID\""
         }
       ]
     }

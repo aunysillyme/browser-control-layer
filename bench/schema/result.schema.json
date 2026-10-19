@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Benchmark result",
+  "type": "object",
+  "required": ["id", "subject", "claim", "unit", "n", "median", "p25", "p75", "arms", "ratio", "measured_at", "expires_at", "machine", "versions", "command", "raw"],
+  "properties": {
+    "id": {"type":"string", "pattern":"^(H[1-5]|R[1-7]|S1|E[12]|C[23])(?:[-.].*)?$"},
+    "subject": {"enum":["package", "default"]},
+    "claim": {"type":"string"}, "unit": {"type":"string"}, "n": {"type":"integer", "minimum":1},
+    "median": {"type":"number"}, "p25": {"type":"number"}, "p75": {"type":"number"},
+    "arms": {"type":"array", "minItems":1}, "ratio": {"type":["number","null"]},
+    "measured_at": {"type":"string", "format":"date-time"}, "expires_at": {"type":"string", "format":"date-time"},
+    "machine": {"type":"object", "required":["os","cpu","ram_gb"]},
+    "versions": {"type":"object", "required":["node","chrome","driver","harness","model_id"]},
+    "command": {"type":"string"},
+    "raw": {"type":"object", "required":["path","sha256"], "properties":{"path":{"type":"string"},"sha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}}
+  }
+}

@@ -14,6 +14,10 @@ export function parseProcessTable(text) {
     const executable = app || command.match(/^(\/\S+)(?=\s|$)/)?.[1];
     const flags = command.match(/--[\w-]+(?:=[^\s]+)?/g) || [];
     const argv = executable ? [executable, ...flags.filter(arg => !arg.startsWith('--user-data-dir'))] : [];
+    // Preserve an unambiguous absolute entry script for driver ancestry. ps
+    // cannot recover paths containing spaces, so those remain report-only.
+    const script=executable && command.slice(executable.length).match(/^\s+(\/[^\s]+\.(?:mjs|cjs|js))(?=\s|$)/)?.[1];
+    if (script) argv.splice(1,0,script);
     if (profile) argv.push(`--user-data-dir=${profile}`);
     return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, executable, argv, command, readable: Boolean(executable) };
   });

@@ -19,7 +19,7 @@ export async function removeThrowaway(record, options) {
   if (await inspect(processAdapter, record.pid)) return { removed: false, reason: 'process-present' };
   const table = await processTable(processAdapter);
   if (!table.verified || table.rows.some(row => row.pgid == null || row.pgid === record.pgid || row.argv?.some(arg => arg.includes(record.userDataDir)))) return { removed: false, reason: 'profile-use-unverified' };
-  const proven = record.kind === 'leased' ? await leaseProof(record, options) : Boolean(matchRecipe({ ...record, readable: true, argv: record.argv }, options));
+  const proven = record.kind === 'leased' ? await leaseProof(record, options) : Boolean(matchRecipe({ ...record, readable: true, argv: record.argv }, { ...options, versions: options.versions || { [record.driverId]: record.driverVersion } }));
   if (!proven || !(await verifyProfilePath(record, options))) return { removed: false, reason: 'profile-unverified' };
   const parent = dirname(record.userDataDir);
   const realParent = await ledger.fs.realpath(parent);
@@ -75,6 +75,7 @@ export async function cleanup(input) {
     if (!apply || !shouldClose) { if (!proof.gone) result.remaining++; result.actions.push({ id: record.id, eligible: shouldClose, owned: proof.owned, reason: proof.reason }); continue; }
     if (!initial.verified) { result.remaining++; result.warnings.push('UNVERIFIED: process inventory'); continue; }
     const action = { id: record.id, profileClass: record.profileClass };
+    if (mode === 'budget' && proof.owned) result.warnings.push(`Resource budget exceeded for owned run ${record.id}`);
     if (proof.owned) {
       const members = record.kind === 'leased' ? await verifiedGroup(record, options) : [];
       if (members) { record.members = members; await ledger.update(record.id, old => ({ ...old, members })); }

@@ -6,6 +6,13 @@ import { signalOwned, signalLeasedSurvivors } from '../src/proc/signals.mjs';
 import { attribute, ancestors } from '../src/proc/ancestry.mjs';
 import { parseStat } from '../src/proc/platform/linux.mjs';
 import { parseProcessTable, darwinAdapter } from '../src/proc/platform/darwin.mjs';
+test('macOS preserves an absolute driver script and refuses ambiguous or eval argument paths',()=>{
+  const prefix='41 30 41 Mon Oct 19 01:02:03 2026 501 0.1 1024 ';
+  const script='/tmp/node_modules/@playwright/mcp/cli.js';
+  assert.ok(parseProcessTable(prefix+'/usr/bin/node '+script+' --headless')[0].argv.includes(script));
+  assert.equal(parseProcessTable(prefix+'/usr/bin/node --eval '+script)[0].argv.includes(script),false);
+  assert.equal(parseProcessTable(prefix+'/usr/bin/node /tmp/a path/cli.js')[0].argv.some(arg=>arg.endsWith('/cli.js')),false);
+});
 import { profileArgument, isUserProfile, classifyProfile } from '../src/hygiene/profiles.mjs';
 
 for (const [label, mutate] of [

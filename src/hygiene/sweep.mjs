@@ -18,7 +18,8 @@ export async function discoverRuns(options) {
   const discovered = [];
   for (const row of table.rows) {
     if (existing.some(record => record.pid === row.pid && record.startTime === row.startTime)) continue;
-    const recipe = matchRecipe(row, options);
+    const versions = options.versions || Object.fromEntries(stamps.map(stamp => [stamp.driverId, stamp.driverVersion]));
+    const recipe = matchRecipe(row, { ...options, versions });
     if (!recipe) continue;
     const userDataDir = profileArgument(row.argv);
     if (isUserProfile(userDataDir, profileOptions)) continue;

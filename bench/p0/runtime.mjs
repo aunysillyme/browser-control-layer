@@ -46,7 +46,8 @@ export function descendants(table, roots) {
   return table.filter(proc => ids.has(proc.pid));
 }
 
-export function requireCi(env = process.env) {
+export function requireCi(env = process.env, { authorizedBenchmark = false } = {}) {
+  if (authorizedBenchmark) return;
   if (env.CI !== 'true' || env.GITHUB_ACTIONS !== 'true' || !env.RUNNER_TEMP) {
     throw new Error('P0_CI_ONLY: real browser observations require a GitHub Actions runner');
   }
@@ -74,8 +75,8 @@ export async function validateRun(handle) {
   }
 }
 
-export async function createRuntime({ root, versions, browserPath, env = process.env }) {
-  requireCi(env);
+export async function createRuntime({ root, versions, browserPath, env = process.env, authorizedBenchmark = false }) {
+  requireCi(env, { authorizedBenchmark });
   const table = async () => parseTable((await execute('ps', ['-axo', 'pid=,ppid=,lstart=,command='], { env: { ...env, LC_ALL: 'C', LANG: 'C' }, maxBuffer: 16 * 1024 * 1024 })).stdout);
   const rootsFor = (all, handle) => ownedRoots(all, handle.runDir, browserPath);
   const validateProfile = async (handle, proc) => {
@@ -101,7 +102,7 @@ export async function createRuntime({ root, versions, browserPath, env = process
         CI: 'true', NO_COLOR: '1', AGENT_BROWSER_SESSION: token,
         AGENT_BROWSER_SOCKET_DIR: join(runDir, 'state')
       };
-      const executable = join(root, 'node_modules', '.bin', item.driver.command);
+      const executable = item.driver.executable || join(root, 'node_modules', '.bin', item.driver.command);
       const spec = { ...item, runDir, token, executable, browserPath };
       const owner = fork(worker, [JSON.stringify(spec)], { env: driverEnv, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
       let output = '';
@@ -146,7 +147,7 @@ export async function createRuntime({ root, versions, browserPath, env = process
       const remainingObserved = all.filter(proc => handle.observed.some(item => sameIdentity(item, proc)));
       return { browserRoots, processes: remainingObserved };
     },
-    endOwner: handle => signal(handle.ownerIdentity, 'SIGKILL', handle),
+    endOwner: (handle, name = 'SIGKILL') => signal(handle.ownerIdentity, name, handle),
     async cleanup(handle) {
       await validateRun(handle);
       if (handle.owner.connected) handle.owner.send({ type: 'close' });

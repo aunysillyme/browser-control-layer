@@ -43,7 +43,7 @@ export async function owns(record, { processAdapter, ledger, now = Date.now, idl
     if (token?.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir) || current.pgid !== record.pgid || record.pgid !== record.pid) return { owned: false, reason: 'lease-proof-unverified' };
     return { owned: true, class: 'leased', current, profileClass: PROFILE.THROWAWAY, path: observedPath };
   }
-  const recipe = matchRecipe(current, { recipes, versions });
+  const recipe = matchRecipe(current, { recipes, versions: versions || { [record.driverId]: record.driverVersion } });
   if (!recipe || record.driverId !== recipe.id || record.driverVersion !== recipe.version || record.profileClass !== recipe.profileClass) return { owned: false, reason: 'recipe-unverified' };
   const parent = await inspect(processAdapter, record.parentPid);
   if (parent && (!parent.readable || String(parent.startTime) !== String(record.parentStartTime))) return { owned: false, reason: 'parent-unverified' };

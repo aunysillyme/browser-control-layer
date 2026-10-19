@@ -1,12 +1,23 @@
 import { basename } from 'node:path';
 import { PROFILE, profileArgument } from './profiles.mjs';
 
-// A version receipt is required before an installed driver can own a browser.
-export const RECIPES = Object.freeze([
-  { id: 'playwright-mcp', version: null, executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium'], automationFlags: ['--remote-debugging-pipe'], profileClass: PROFILE.PERSISTENT, source: 'https://github.com/microsoft/playwright-mcp', verification: 'CI_PENDING' },
-  { id: 'chrome-devtools-mcp', version: null, executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium'], automationFlags: ['--remote-debugging-port=0'], profileClass: PROFILE.THROWAWAY, source: 'https://github.com/ChromeDevTools/chrome-devtools-mcp', verification: 'CI_PENDING' },
-  { id: 'agent-browser', version: null, executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium'], automationFlags: ['--remote-debugging-port=0'], profileClass: PROFILE.THROWAWAY, source: 'https://github.com/vercel-labs/agent-browser', verification: 'CI_PENDING' }
-]);
+import catalog from '../../bench/drivers.json' with { type: 'json' };
+
+const profilePatterns = {
+  'playwright-mcp': /(?:^|\/)ms-playwright\/mcp-[^/]+$/,
+  'chrome-devtools-mcp': /(?:^|\/)chrome-devtools-mcp\/(?:chrome-profile|chrome-profile-stable)$/,
+  'agent-browser': /(?:^|\/)(?:playwright_chromiumdev_profile-[^/]+|agent-browser-[^/]+)$/
+};
+export const RECIPES = Object.freeze(catalog.drivers.map(driver => ({
+  id: driver.id, version: driver.version,
+  executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium', 'chrome-headless-shell'],
+  automationFlags: [driver.id === 'playwright-mcp' ? '--remote-debugging-pipe' : '--remote-debugging-port=0'],
+  profileClass: driver.variants[0].profileClass,
+  source: driver.source, verification: catalog.verification,
+  driverExecutables: [process.execPath],
+  driverArg: arg => arg.replaceAll('\\', '/').includes(`/${driver.package}/`) || arg.replaceAll('\\', '/').endsWith(`/${driver.command}`),
+  matchesProfile: profile => profilePatterns[driver.id]?.test(profile.replaceAll('\\', '/')) === true
+})));
 
 export function matchRecipe(processInfo, { recipes = RECIPES, versions = {} } = {}) {
   if (!processInfo?.readable || !processInfo.argv?.length || !processInfo.executable) return null;

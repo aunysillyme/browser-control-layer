@@ -86,12 +86,12 @@
     {
       "path": "references/defaults.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "679ff0a8563ded71301a2ee24addd3f36188d04e2953c8a1a3ae93a6a93bde2c"
     },
     {
       "path": "references/drivers.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "651d9b443060785b69abfe83a407aa637e1efcc734be121a1b99e9b3c6c0b76b"
     },
     {
       "path": "runners/aun-runner-browser.template.md",

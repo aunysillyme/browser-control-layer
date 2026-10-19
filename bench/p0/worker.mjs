@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { McpClient } from './protocol.mjs';
 
 const spec = JSON.parse(process.argv[2]);
-const url = 'data:text/html,<title>aun-p0</title><main>Public synthetic browser fixture</main>';
+const url = spec.url || 'data:text/html,<title>aun-p0</title><main>Public synthetic browser fixture</main>';
 let child;
 let client;
 let logs = '';

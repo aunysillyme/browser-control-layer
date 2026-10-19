@@ -226,7 +226,9 @@ test('P0 MCP keeps transport failures and refuses requests after driver exit', a
 
 test('P0 exact versions fail closed until pins or reviewed inputs are provided', () => {
   const versions = Object.fromEntries([...catalog.drivers.map(driver => driver.package), 'puppeteer'].map(name => [name, '1.2.3']));
-  assert.throws(() => selectVersions(catalog), /P0_VERSION_UNVERIFIED/);
+  const unpinned={...catalog,drivers:catalog.drivers.map(driver=>({...driver,version:null})),browser:{...catalog.browser,version:null}};
+  assert.throws(() => selectVersions(unpinned), /P0_VERSION_UNVERIFIED/);
+  assert.ok(Object.values(selectVersions(catalog)).every(value=>/^\d+\.\d+\.\d+$/.test(value)));
   assert.deepEqual(selectVersions(catalog, versions), versions);
   for (const version of ['latest', '^1.2.3', '1.2', 'file:fixture', '1.2.3 && ignored']) {
     assert.throws(() => selectVersions(catalog, { ...versions, puppeteer: version }), /P0_VERSION_UNVERIFIED/);
@@ -250,5 +252,5 @@ test('P0 workflow retains artifacts on failure and gates private macOS runs', as
     assert.ok(job.steps.some(step => step.env?.AUN_P0_VERSIONS?.includes('inputs.p0_versions')));
     assert.ok(job.steps.filter(step => step.run).every(step => !step.run.includes('"view"')));
   }
-  assert.ok(catalog.drivers.every(driver => driver.version === null && driver.recipeOwnership === false));
+  assert.ok(catalog.drivers.every(driver => /^\d+\.\d+\.\d+$/.test(driver.version) && driver.recipeOwnership === false));
 });

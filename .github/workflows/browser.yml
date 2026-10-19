@@ -147,19 +147,85 @@
     },
     "e1-linux": {
       "runs-on": "ubuntu-latest",
-      "timeout-minutes": 2,
+      "timeout-minutes": 30,
+      "permissions": {
+        "contents": "read"
+      },
       "steps": [
         {
-          "run": "echo \"E1 lands in the next dispatch\"; exit 1"
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install pinned CI drivers",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+        },
+        {
+          "name": "Measure fixtures and retain raw observations",
+          "run": "node evals/e1/run.mjs --ci",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload rows and raw sha256",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "e1-linux-${{ github.sha }}",
+            "path": "proof/runs/e1/",
+            "if-no-files-found": "error"
+          }
         }
       ]
     },
     "e1-macos": {
       "runs-on": "macos-latest",
-      "timeout-minutes": 2,
+      "timeout-minutes": 30,
+      "permissions": {
+        "contents": "read"
+      },
       "steps": [
         {
-          "run": "echo \"E1 lands in the next dispatch\"; exit 1"
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install pinned CI drivers",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+        },
+        {
+          "name": "Measure fixtures and retain raw observations",
+          "run": "node evals/e1/run.mjs --ci",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload rows and raw sha256",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "e1-macos-${{ github.sha }}",
+            "path": "proof/runs/e1/",
+            "if-no-files-found": "error"
+          }
         }
       ],
       "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
@@ -187,7 +253,7 @@
           "name": "Install reviewed browser fixture version",
           "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
           "env": {
-            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION || '24.16.0' }}"
           }
         },
         {
@@ -232,7 +298,7 @@
           "name": "Install reviewed browser fixture version",
           "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
           "env": {
-            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION || '24.16.0' }}"
           }
         },
         {
@@ -277,7 +343,7 @@
           "name": "Install reviewed browser fixture version",
           "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
           "env": {
-            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION || '24.16.0' }}"
           }
         },
         {
@@ -299,6 +365,132 @@
         }
       ],
       "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+    },
+    "h-rows-linux": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 90,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install pinned CI drivers",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+        },
+        {
+          "name": "Measure fixtures and retain raw observations",
+          "run": "node bench/run.mjs hygiene --suite H --n 3 --out proof/runs/h",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload rows and raw sha256",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "h-rows-linux-${{ github.sha }}",
+            "path": "proof/runs/h/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "r-rows-linux": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 90,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install pinned CI drivers",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+        },
+        {
+          "name": "Measure fixtures and retain raw observations",
+          "run": "xvfb-run -a node bench/run.mjs hygiene --suite R --n 3 --out proof/runs/r",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload rows and raw sha256",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "r-rows-linux-${{ github.sha }}",
+            "path": "proof/runs/r/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "s-rows-linux": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 90,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install pinned CI drivers",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+        },
+        {
+          "name": "Measure fixtures and retain raw observations",
+          "run": "node bench/run.mjs hygiene --suite S --n 3 --out proof/runs/s",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload rows and raw sha256",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "s-rows-linux-${{ github.sha }}",
+            "path": "proof/runs/s/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,111 @@
+{
+  "localIdleSeconds": {
+    "value": 300,
+    "source": {
+      "url": "https://github.com/trycua/cua",
+      "document": "how-driver-works",
+      "verification": "plan receipt; live fetch pending"
+    },
+    "date": "2026-10-18"
+  },
+  "remoteIdleSeconds": {
+    "value": 60,
+    "source": {
+      "url": "https://developers.cloudflare.com/browser-rendering/platform/limits/",
+      "verification": "plan receipt; live fetch pending"
+    },
+    "date": "2026-10-18"
+  },
+  "remoteFreeConcurrency": {
+    "value": 3,
+    "source": {
+      "url": "https://developers.cloudflare.com/browser-rendering/platform/limits/",
+      "verification": "plan receipt; live fetch pending"
+    },
+    "date": "2026-10-18"
+  },
+  "waitCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R4"
+  },
+  "repeatNavigateCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R4"
+  },
+  "emptyReadCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R4"
+  },
+  "browserCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R2"
+  },
+  "tabCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R2"
+  },
+  "fanoutCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R6"
+  },
+  "rssBytes": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R6,H5"
+  },
+  "sustainedCpuPercent": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R6,H5"
+  },
+  "termGraceMs": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "H1"
+  },
+  "identicalErrorCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R4"
+  },
+  "batchStreakCap": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "C3"
+  },
+  "minimumFreeBytes": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R6"
+  },
+  "maximumLoadPerCore": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R6"
+  },
+  "cpuWindowMs": {
+    "value": null,
+    "source": null,
+    "date": null,
+    "needs": "R6,H5"
+  }
+}

@@ -48,11 +48,18 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
   let sentinel;
   const originalSignal=adapter.signal, permitted=new Map();let wrongKills=0;
   adapter.signal=async(target,signal)=>{
+    await register();
     const ids=target<0?(await adapter.list()).filter(row=>row.pgid===-target).map(row=>row.pid):[target];
     for(const pid of ids){const saved=permitted.get(pid),current=await adapter.inspect(pid);if(!saved||!current||current.startTime!==saved.startTime||pid===sentinel.process().pid){wrongKills++;throw new Error('E1_WRONG_KILL: identity outside this test');}}
     return originalSignal(target,signal);
   };
-  const register=async()=>{for(const row of await adapter.list()){if(row.argv?.some(arg=>arg.includes(root))&&row.pid!==sentinel.process().pid&&!row.argv.some(arg=>arg.includes(join(root,'sentinel'))))permitted.set(row.pid,row);}};
+  // Registered: processes whose argv names this run's directory, plus their descendants (Chrome helpers rewrite their argv). The sentinel tree is never registered.
+  const register=async()=>{
+    const table=await adapter.list(),blocked=new Set([sentinel.process().pid]);
+    for(let changed=true;changed;){changed=false;for(const row of table)if(blocked.has(row.ppid)&&!blocked.has(row.pid)){blocked.add(row.pid);changed=true;}}
+    for(const row of table)if(row.argv?.some(arg=>arg.includes(root))&&!blocked.has(row.pid)&&!row.argv.some(arg=>arg.includes(join(root,'sentinel'))))permitted.set(row.pid,row);
+    for(let changed=true;changed;){changed=false;for(const row of table)if(permitted.has(row.ppid)&&!permitted.has(row.pid)&&!blocked.has(row.pid)){permitted.set(row.pid,row);changed=true;}}
+  };
   const versions=Object.fromEntries(catalog.drivers.map(driver=>[driver.id,driver.version]));
   const runtime=await createRuntime({root:ROOT,versions,browserPath:(await puppeteer.executablePath()),env:runtimeEnv,authorizedBenchmark});
   const handles=[];

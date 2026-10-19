@@ -216,11 +216,10 @@ export function check(root, options = {}) {
   protect('NAME_PARAM',() => { for (const name of names.filter(n=>n.startsWith('src/') && n!=='src/config.mjs')) if (read(root,name).includes(pkg.name) || read(root,name).includes(core)) add('NAME_PARAM',name); });
   protect('SET_DRIFT',() => {
     const lock='.repo-build/set.lock.json';
-    if (!existsSync(join(root,lock))) { warnings.push('SET_DRIFT:set renderer awaits next implementation'); return; }
+    if (!existsSync(join(root,lock))) { add('SET_DRIFT','set lock missing'); return; }
     const data=JSON.parse(read(root,lock)), renderer='.repo-build/render-set.mjs';
     if (!existsSync(join(root,renderer))) {
-      if (data.renderer_sha256 != null) add('SET_DRIFT','locked renderer missing');
-      else warnings.push('SET_DRIFT:renderer pending');
+      add('SET_DRIFT','locked renderer missing');
       return;
     }
     if (digest(read(root,renderer))!==data.renderer_sha256) { add('SET_DRIFT','renderer hash'); return; }

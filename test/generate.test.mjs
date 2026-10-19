@@ -45,12 +45,12 @@ test('renamed package drives catalog, commands, links and runner generation',asy
   assert.ok(out['llms.txt'].includes('skills/renamed-pack/SKILL.md'));
   assert.equal(catalog(config(root))[0].skill,'.claude/skills/renamed-pack');
 });
-test('vendored set bytes bind both lock hashes and pending renderer is explicit',async()=>{
+test('vendored set and renderer bytes bind their lock hashes',async()=>{
   const {createHash}=await import('node:crypto'), bytes=readFileSync('.repo-build/set.json');
   const lock=JSON.parse(readFileSync('.repo-build/set.lock.json','utf8'));
   const hash=createHash('sha256').update(bytes).digest('hex');
   assert.equal(lock.sha256,hash); assert.equal(lock.vendored_sha256,hash);
-  assert.equal(lock.renderer_sha256,null);
+  assert.equal(lock.renderer_sha256,createHash('sha256').update(readFileSync('.repo-build/render-set.mjs')).digest('hex'));
   assert.equal(lock.source,JSON.parse(readFileSync('.repo-build/config.json','utf8')).set.source);
   assert.notEqual(createHash('sha256').update(Buffer.concat([bytes,Buffer.from(' ')] )).digest('hex'),lock.sha256);
 });

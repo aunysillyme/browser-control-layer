@@ -41,6 +41,13 @@ test('renamed tree passes NAME_PARAM and all current checks without local privat
     writeFileSync(driversPath,drivers.replace(/\d+\.\d+\.\d+/, '99.0.0'));
     assert.ok(check(root,{only:['BUNDLE_DRIFT']}).issues.some(issue=>issue===`BUNDLE_DRIFT:skills/${p.name}/references/drivers.md`));
     writeFileSync(driversPath,drivers);
+    for(const name of ['README.md','llms.txt','.repo-build/render-set.mjs']) {
+      const target=join(root,name), original=readFileSync(target,'utf8');
+      writeFileSync(target,name.endsWith('.mjs')?original+'\n':original.replace('<!-- set:start -->','<!-- set:start -->\nDrift'));
+      const result=check(root,{only:['SET_DRIFT']});
+      assert.ok(result.issues.some(issue=>issue.startsWith('SET_DRIFT:')),name);
+      writeFileSync(target,original);
+    }
     const built=spawnSync(process.execPath,['scripts/build.mjs'],{cwd:root,encoding:'utf8'});
     assert.equal(built.status,0,built.stderr);
     assert.ok(check(root,{release:true}).issues.some(s=>s.includes('stub remains')));

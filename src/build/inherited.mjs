@@ -130,4 +130,3 @@ export function workflowIssues(name, text) {
   }
   return issues;
 }
-

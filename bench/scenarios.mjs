@@ -7,7 +7,8 @@ export const scenarios = Object.freeze([
   ['R1','browser mode','shell, new headless, headed'], ['R2','browser allocation','one browser N tabs, N browsers'], ['R3','media requests','allowed, blocked'], ['R4','wait strategy','sleep, element, loop stop'], ['R5','extraction size','fields, text, screenshot'], ['R6','concurrency','1, 2, 4'], ['R7','idle tabs','idle, blank, closed'], ['S1','screen quality','planted, clean']
 ].map(([id,claim,arms])=>({id,claim,arms:arms.split(', '),subject:id[0]==='R'?'default':'package'})));
 export function resourceTotals(rows) {
-  if(rows.some(row=>!Number.isFinite(row.rssBytes)||row.rssBytes<0||!Number.isFinite(row.cpuPercent)||row.cpuPercent<0))throw new Error('BENCH_RESOURCES_UNVERIFIED: owned process metrics are incomplete');
+  const bad=rows.filter(row=>!Number.isFinite(row.rssBytes)||row.rssBytes<0||!Number.isFinite(row.cpuPercent)||row.cpuPercent<0);
+  if(bad.length)throw new Error('BENCH_RESOURCES_UNVERIFIED: owned process metrics are incomplete: '+JSON.stringify(bad.map(row=>({pid:row.pid,ppid:row.ppid,rssBytes:row.rssBytes,cpuPercent:row.cpuPercent,readable:row.readable,exe:String(row.argv?.[0]).slice(-40)}))));
   return {rssBytes:rows.reduce((sum,row)=>sum+row.rssBytes,0),cpuPercent:rows.reduce((sum,row)=>sum+row.cpuPercent,0)};
 }
 export async function sampleOwnedResources(adapter, rootPid, { wait = ms => new Promise(resolve => setTimeout(resolve,ms)), intervalMs = 100 } = {}) {

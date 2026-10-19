@@ -79,7 +79,7 @@ export async function benchMain(args=[],{stdout=process.stdout,stderr=process.st
     if(suite==='all'||suite==='H'||suite==='E1') {
       const e1=await runE1({out:join(out,'e1'),puppeteer,fixture,authorizedBenchmark,detected});failed=e1.status!=='passed';raw.push(...e1.rows.map(row=>({...row,caseId:row.id,id:'E1',value:row.ownedProcesses,unit:'processes',suite:'E1'})));
       if(suite!=='E1') {
-        const catalog=JSON.parse(await readFile(join(ROOT,'bench/drivers.json'),'utf8')),runtime=await createRuntime({root:ROOT,versions,browserPath:puppeteer.executablePath(),authorizedBenchmark,env:{...process.env,RUNNER_TEMP:process.env.RUNNER_TEMP||tmpdir()}});
+        const catalog=JSON.parse(await readFile(join(ROOT,'bench/drivers.json'),'utf8')),runtime=await createRuntime({root:ROOT,versions,browserPath:(await puppeteer.executablePath()),authorizedBenchmark,env:{...process.env,RUNNER_TEMP:process.env.RUNNER_TEMP||tmpdir()}});
         catalog.drivers=catalog.drivers.map(driver=>({...driver,executable:detected.find(row=>row.id===driver.id)?.executable}));
         for(const id of ['H1','H2'])for(const driver of catalog.drivers){const baseline=await measure(runtime,{driver,variant:driver.variants[0],repeat:1},id);raw.push({...baseline,id,arm:'baseline',value:baseline.leftover_processes,unit:'processes'});if(baseline.status==='failed')failed=true;}
         const idleItems=[{id:'h2-lease',arm:'leased',ending:'idle',repeat:1},...catalog.drivers.map(driver=>({id:`h2-${driver.id}`,arm:'unleased',driver:driver.id,ending:'idle',repeat:1}))];

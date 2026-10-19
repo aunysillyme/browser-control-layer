@@ -38,7 +38,7 @@ try {
   await sentinelProof();
   for (const mode of ['cleanup', 'idle', 'orphans', 'budget']) {
     const options = { ledger, processAdapter: adapter, sessionKey: `fixture-${mode}`, driverId: 'aun-lease', termGraceMs: 1000, idleSeconds: 0, budgets: mode === 'budget' ? { rssBytes: 0 } : {} };
-    const started = await startLease([puppeteer.executablePath(), '--user-data-dir={profile}', '--headless=new', '--no-sandbox', '--remote-debugging-port=0', 'about:blank'], options);
+    const started = await startLease([(await puppeteer.executablePath()), '--user-data-dir={profile}', '--headless=new', '--no-sandbox', '--remote-debugging-port=0', 'about:blank'], options);
     assert.equal(started.verified, true, 'launched browser identity verified');
     launched.push(started);
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -54,6 +54,7 @@ try {
 } catch (error) {
   raw.push({ suite: 'H4', status: 'failed', wrongKills, error: { name: error.name, message: error.message, stack: error.stack } });
   process.exitCode = 1;
+  console.error(error.stack);
 } finally {
   for (const item of launched) await cleanup({ ledger, processAdapter: adapter, sessionKey: item.record.sessionKey, apply: true, termGraceMs: 1000 }).catch(error => raw.push({ cleanupError: error.message }));
   // The harness owns the sentinel and closes it only after its survival checks.

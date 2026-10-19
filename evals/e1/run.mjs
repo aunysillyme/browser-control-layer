@@ -53,7 +53,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
   };
   const register=async()=>{for(const row of await adapter.list()){if(row.argv?.some(arg=>arg.includes(root))&&row.pid!==sentinel.process().pid&&!row.argv.some(arg=>arg.includes(join(root,'sentinel'))))permitted.set(row.pid,row);}};
   const versions=Object.fromEntries(catalog.drivers.map(driver=>[driver.id,driver.version]));
-  const runtime=await createRuntime({root:ROOT,versions,browserPath:puppeteer.executablePath(),env:runtimeEnv,authorizedBenchmark});
+  const runtime=await createRuntime({root:ROOT,versions,browserPath:(await puppeteer.executablePath()),env:runtimeEnv,authorizedBenchmark});
   const handles=[];
   const base={ledger,processAdapter:adapter,termGraceMs:1000,versions};
   async function allowedHandle(handle) {
@@ -64,7 +64,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
     const sessionId=`case-${item.id}`,session=`claude-code:${JSON.stringify([sessionId,null])}`,handle={session,sessionId,item};handles.push(handle);
     try {
       if(item.arm==='leased') {
-        const child=fork(fileURLToPath(new URL('./worker.mjs',import.meta.url)),[JSON.stringify({state:ledger.root,session,authorizedBenchmark,executable:puppeteer.executablePath(),url:fixture.url+(item.ending==='budget'?'/memory':'/list'),budget:item.ending==='budget'})],{stdio:['ignore','pipe','pipe','ipc']});
+        const child=fork(fileURLToPath(new URL('./worker.mjs',import.meta.url)),[JSON.stringify({state:ledger.root,session,authorizedBenchmark,executable:(await puppeteer.executablePath()),url:fixture.url+(item.ending==='budget'?'/memory':'/list'),budget:item.ending==='budget'})],{stdio:['ignore','pipe','pipe','ipc']});
         handle.child=child;handle.exited=new Promise(resolve=>child.once('exit',resolve));
         const ready=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('E1_OWNER_TIMEOUT')),30000);child.once('message',message=>{clearTimeout(timer);message.type==='ready'?resolve(message):reject(new Error(message.error));});child.once('error',reject);child.once('exit',code=>{clearTimeout(timer);reject(new Error(`E1_OWNER_EXIT:${code}`));});});
         handle.record=await ledger.read(ready.id);handle.owner=await adapter.inspect(child.pid);

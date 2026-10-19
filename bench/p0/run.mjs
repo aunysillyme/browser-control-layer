@@ -47,7 +47,7 @@ export async function main(args = process.argv.slice(2)) {
     for (const name of Object.keys(versions)) installed[name] = JSON.parse(await readFile(join(root, 'node_modules', name, 'package.json'), 'utf8')).version;
     verifyInstalled(versions, installed);
     const puppeteer = await import('puppeteer');
-    const browserPath = puppeteer.executablePath();
+    const browserPath = (await puppeteer.executablePath());
     const chrome = await promisify(execFile)(browserPath, ['--version']);
     metadata.chrome = chrome.stdout.trim();
     const adapter = await createRuntime({ root, versions: { ...versions, chrome: metadata.chrome }, browserPath });

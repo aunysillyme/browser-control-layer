@@ -1,5 +1,63 @@
 [
   {
+    "id": "H1",
+    "subject": "package",
+    "claim": "owner endings",
+    "unit": "processes",
+    "n": 38,
+    "median": 0,
+    "p25": 0,
+    "p75": 0,
+    "arms": [
+      {
+        "name": "baseline",
+        "n": 3,
+        "median": 0,
+        "p25": 0,
+        "p75": 7.5
+      },
+      {
+        "name": "lease",
+        "n": 23,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      {
+        "name": "sweep",
+        "n": 12,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T10:04:54.791Z",
+    "expires_at": "2026-12-18T10:04:54.791Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite H --n 3",
+    "raw": {
+      "path": "proof/runs/2026-10-19-github-ubuntu/h/raw.jsonl",
+      "sha256": "408b159849e1ac1d297b1169a399f58ec5ec819366878c6797e5ba7ec8a59a81"
+    }
+  },
+  {
     "id": "E1",
     "subject": "package",
     "claim": "crash matrix",
@@ -55,46 +113,32 @@
     "subject": "package",
     "claim": "sentinel safety",
     "unit": "processes",
-    "n": 4,
+    "n": 45,
     "median": 0,
     "p25": 0,
     "p75": 0,
     "arms": [
       {
+        "name": "baseline",
+        "n": 1,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      {
         "name": "cleanup",
-        "n": 1,
-        "median": 0,
-        "p25": 0,
-        "p75": 0
-      },
-      {
-        "name": "idle",
-        "n": 1,
-        "median": 0,
-        "p25": 0,
-        "p75": 0
-      },
-      {
-        "name": "orphans",
-        "n": 1,
-        "median": 0,
-        "p25": 0,
-        "p75": 0
-      },
-      {
-        "name": "budget",
-        "n": 1,
+        "n": 44,
         "median": 0,
         "p25": 0,
         "p75": 0
       }
     ],
     "ratio": null,
-    "measured_at": "2026-10-19T08:49:58.776Z",
-    "expires_at": "2026-12-18T08:49:58.776Z",
+    "measured_at": "2026-10-19T10:04:54.791Z",
+    "expires_at": "2026-12-18T10:04:54.791Z",
     "machine": {
       "os": "linux",
-      "cpu": "AMD EPYC 9V45 96-Core Processor",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
       "ram_gb": 7.752300262451172
     },
     "versions": {
@@ -110,11 +154,179 @@
       "model_id": null
     },
     "command": "npx browser-control-layer bench hygiene --suite H --n 3",
-    "wrong_kills": 0,
     "raw": {
-      "path": "proof/runs/2026-10-19-github-ubuntu/h4/rows.jsonl",
-      "sha256": "7164c36a94e8c39eb4f71df3a9c65f74929b77b9aba48a7fd0a4ecaa21e8df2b"
+      "path": "proof/runs/2026-10-19-github-ubuntu/h/raw.jsonl",
+      "sha256": "408b159849e1ac1d297b1169a399f58ec5ec819366878c6797e5ba7ec8a59a81"
+    },
+    "wrong_kills": 0
+  },
+  {
+    "id": "H2",
+    "subject": "package",
+    "claim": "ten-minute idle",
+    "unit": "processes",
+    "n": 7,
+    "median": 0,
+    "p25": 0,
+    "p75": 9.5,
+    "arms": [
+      {
+        "name": "baseline",
+        "n": 3,
+        "median": 10,
+        "p25": 9.5,
+        "p75": 11
+      },
+      {
+        "name": "lease-timer",
+        "n": 1,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      {
+        "name": "sweep-timer",
+        "n": 3,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T10:04:54.791Z",
+    "expires_at": "2026-12-18T10:04:54.791Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite H --n 3",
+    "raw": {
+      "path": "proof/runs/2026-10-19-github-ubuntu/h/raw.jsonl",
+      "sha256": "408b159849e1ac1d297b1169a399f58ec5ec819366878c6797e5ba7ec8a59a81"
     }
+  },
+  {
+    "id": "H3",
+    "subject": "package",
+    "claim": "run-created tabs",
+    "unit": "tabs",
+    "n": 45,
+    "median": 0,
+    "p25": 0,
+    "p75": 0,
+    "arms": [
+      {
+        "name": "baseline",
+        "n": 1,
+        "median": 1,
+        "p25": 1,
+        "p75": 1
+      },
+      {
+        "name": "cleanup",
+        "n": 44,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      }
+    ],
+    "ratio": 0,
+    "measured_at": "2026-10-19T10:04:54.791Z",
+    "expires_at": "2026-12-18T10:04:54.791Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite H --n 3",
+    "raw": {
+      "path": "proof/runs/2026-10-19-github-ubuntu/h/raw.jsonl",
+      "sha256": "408b159849e1ac1d297b1169a399f58ec5ec819366878c6797e5ba7ec8a59a81"
+    }
+  },
+  {
+    "id": "H5",
+    "subject": "package",
+    "claim": "package overhead",
+    "unit": "ms",
+    "n": 60,
+    "median": 5.891180999577045,
+    "p25": 0.0037555003073066473,
+    "p75": 35.460558499908075,
+    "arms": [
+      {
+        "name": "baseline",
+        "n": 20,
+        "median": 0.0018380004912614822,
+        "p25": 0.0016070001292973757,
+        "p75": 0.0030145004857331514
+      },
+      {
+        "name": "browser-hook",
+        "n": 20,
+        "median": 5.891180999577045,
+        "p25": 5.370357249863446,
+        "p75": 9.710017749341205
+      },
+      {
+        "name": "doctor-600",
+        "n": 20,
+        "median": 39.70617700042203,
+        "p25": 36.40191749972291,
+        "p75": 42.83192849974148
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T10:04:54.791Z",
+    "expires_at": "2026-12-18T10:04:54.791Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Chrome/155.0.8059.79",
+      "driver": {
+        "playwright-mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "npx browser-control-layer bench hygiene --suite H --n 3",
+    "raw": {
+      "path": "proof/runs/2026-10-19-github-ubuntu/h/raw.jsonl",
+      "sha256": "408b159849e1ac1d297b1169a399f58ec5ec819366878c6797e5ba7ec8a59a81"
+    },
+    "hook_p95_ms": 19.295925100613385
   },
   {
     "id": "S1",
@@ -165,6 +377,140 @@
     "raw": {
       "path": "proof/runs/2026-10-19-github-ubuntu/s/raw.jsonl",
       "sha256": "579bec222abd27f8b56a25197d3aa27eb8b3a6dc4e6e2b50c1ffb96226406574"
+    }
+  },
+  {
+    "id": "H1-baseline",
+    "subject": "default",
+    "claim": "owner endings",
+    "unit": "processes",
+    "n": 40,
+    "median": 0,
+    "p25": 0,
+    "p75": 3.5,
+    "arms": [
+      {
+        "name": "agent-browser",
+        "n": 10,
+        "median": 14.5,
+        "p25": 14,
+        "p75": 15
+      },
+      {
+        "name": "chrome-devtools",
+        "n": 10,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      {
+        "name": "playwright-default",
+        "n": 10,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      },
+      {
+        "name": "playwright-isolated",
+        "n": 10,
+        "median": 0,
+        "p25": 0,
+        "p75": 0
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T08:50:32.337Z",
+    "expires_at": "2026-12-18T08:50:32.337Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Google Chrome for Testing 155.0.8059.79",
+      "driver": {
+        "@playwright/mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0",
+        "playwright": "1.64.1",
+        "typescript": "7.0.2"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "node bench/p0/run.mjs --ci --n 10 --out proof/runs/p0 --versions proof/runs/p0/install-versions.json",
+    "raw": {
+      "path": "proof/runs/2026-10-19-github-ubuntu/p0/raw.jsonl",
+      "sha256": "2e910b5971c44d95a6516108e5620a3c8fa5927f8ecc8b0c29ca18444c53e107"
+    }
+  },
+  {
+    "id": "H2-baseline",
+    "subject": "default",
+    "claim": "ten-minute idle",
+    "unit": "processes",
+    "n": 40,
+    "median": 9.5,
+    "p25": 9,
+    "p75": 10.5,
+    "arms": [
+      {
+        "name": "agent-browser",
+        "n": 10,
+        "median": 12,
+        "p25": 12,
+        "p75": 12
+      },
+      {
+        "name": "chrome-devtools",
+        "n": 10,
+        "median": 10,
+        "p25": 10,
+        "p75": 10
+      },
+      {
+        "name": "playwright-default",
+        "n": 10,
+        "median": 9,
+        "p25": 9,
+        "p75": 9
+      },
+      {
+        "name": "playwright-isolated",
+        "n": 10,
+        "median": 9,
+        "p25": 9,
+        "p75": 9
+      }
+    ],
+    "ratio": null,
+    "measured_at": "2026-10-19T09:32:00.709Z",
+    "expires_at": "2026-12-18T09:32:00.709Z",
+    "machine": {
+      "os": "linux",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "ram_gb": 7.752300262451172
+    },
+    "versions": {
+      "node": "v24.21.0",
+      "chrome": "Google Chrome for Testing 155.0.8059.79",
+      "driver": {
+        "@playwright/mcp": "0.0.83",
+        "chrome-devtools-mcp": "1.11.0",
+        "agent-browser": "0.39.1",
+        "puppeteer": "25.14.0",
+        "playwright": "1.64.1",
+        "typescript": "7.0.2"
+      },
+      "harness": "deterministic",
+      "model_id": null
+    },
+    "command": "node bench/p0/run.mjs --ci --n 10 --out proof/runs/p0 --versions proof/runs/p0/install-versions.json",
+    "raw": {
+      "path": "proof/runs/2026-10-19-github-ubuntu/p0/raw.jsonl",
+      "sha256": "2e910b5971c44d95a6516108e5620a3c8fa5927f8ecc8b0c29ca18444c53e107"
     }
   },
   {

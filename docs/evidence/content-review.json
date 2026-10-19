@@ -1,7 +1,7 @@
 {
   "files": {
     "README.md": {
-      "sha256": "53cd9d84ffa33bbf96e4aad00d6fad4897982770bba505e8f64722867976935c",
+      "sha256": "95d910fc529e46fce28764e933eadccd1e661182a39b6fc9cf113deff8597e63",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     },
@@ -56,7 +56,7 @@
       "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/RESULTS.md": {
-      "sha256": "4571905814a1092070ca21e5c24aa080b76f527cb21ccef6949bf908e11b06dd",
+      "sha256": "a10bb2e6cb1bf18583194d08f6c2cdf0b1f4a66d98d0e531c3a534b5b98643a6",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     },

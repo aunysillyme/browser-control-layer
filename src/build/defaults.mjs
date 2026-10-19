@@ -15,7 +15,7 @@ export function generateDefaults(root) {
   const json = name => JSON.parse(readFileSync(join(root, name), 'utf8'));
   const results = json('proof/results.json');
   const defaults = deriveDefaults(json('src/hygiene/defaults.json'), Array.isArray(results) ? results : results.rows || []);
-  const lines = Object.entries(defaults).map(([key,s]) => `| ${key} | ${s.value === null ? 'unset' : s.value} | ${s.source?.row ? `row: ${s.source.row} (${s.date})` : s.source?.url ? `[Primary documentation](${s.source.url}) (${s.date})` : `Awaiting ${s.needs}`} |`);
+  const lines = Object.entries(defaults).map(([key,s]) => `| ${key} | ${s.value === null ? 'unset' : s.value} | ${s.source?.row ? `row: ${s.source.row} (${s.date})${key === 'waitCap' ? '; calibrated on the benchmark fixture as a conservative loop guard that resets on a non-empty read' : ''}` : s.source?.url ? `[Primary documentation](${s.source.url}) (${s.date})` : `Awaiting ${s.needs}`} |`);
   const body = '# Resource defaults\n\nGenerated from recorded benchmark rows and dated primary documentation. Unmeasured settings stay unset. Expired evidence warns and retains its dated binding.\n\n| Setting | Value | Evidence |\n|---|---|---|\n' + lines.join('\n') + '\n';
   return { 'src/hygiene/defaults.json': JSON.stringify(defaults,null,2)+'\n', 'docs/DEFAULTS.md': body, [`${core}/references/defaults.md`]: body };
 }

@@ -39,7 +39,7 @@ See [SECURITY-MODEL.md](SECURITY-MODEL.md) and [DRIVERS.md](DRIVERS.md). The own
 
 On macOS, [darwin.mjs](../src/proc/platform/darwin.mjs) reads the process table with `ps` and requests environments with explicit `-Eww`. Each environment response must contain exactly the requested PID. The root's token, exact profile path, process group and saved start identity must agree with its owner file. Helpers with unreadable environments qualify only through ancestry to that token-verified root; a conflicting token refuses the group. Linux uses its existing `/proc` adapter.
 
-Run `node --test test/darwin.test.mjs` to verify this boundary with fake process and filesystem adapters, including application paths with spaces, helper ancestry, environment refusal, PID reuse and a surviving sentinel. Real browser lifecycle and wrong-kill verification run through `browser.yml` in CI. No separate watcher monitors this adapter.
+Run `node --test test/darwin.test.mjs` to verify this boundary with fake process and filesystem adapters, including application paths with spaces, helper ancestry, environment refusal, PID reuse and a surviving sentinel. Now that the repository is public, macOS jobs run real browser lifecycle and wrong-kill verification through `browser.yml` in CI; their results will be added when they land. No separate watcher monitors this adapter.
 
 ## Activity and triggers
 

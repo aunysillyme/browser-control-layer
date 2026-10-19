@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
 import fixtures from './fixtures/hooks/contracts.json' with { type: 'json' };
+import defaults from '../src/hygiene/defaults.json' with { type: 'json' };
 import { normalizeEvent, browserTool, commandWords } from '../src/hooks/_event.mjs';
 import { pickCheck } from '../src/hooks/pick-check.mjs';
 import { loopStop, loopLimits } from '../src/hooks/loop-stop.mjs';
@@ -124,15 +125,12 @@ test('CLI pick guard GREEN stores a browser session and RED refuses a session sw
   assert.equal((await pickCheck(next, browserTool(next), { ledger })).allowed, false);
 });
 
-test('retry caps remain unset until measured rows exist', () => {
-  if (loopLimits.waitCap !== null) {
-    assert.equal(typeof loopLimits.waitCap, 'number');
-    assert.equal(loopLimits.repeatNavigateCap, null);
-    assert.equal(loopLimits.emptyReadCap, null);
-    assert.equal(loopLimits.identicalErrorCap, null);
-  } else {
-    assert.ok(Object.values(loopLimits).every(value => value === null));
-  }
+test('wait cap is calibrated from R4 and other retry caps remain unset', () => {
+  assert.equal(loopLimits.waitCap, 8);
+  assert.equal(defaults.waitCap.source.row, 'R4');
+  assert.equal(loopLimits.repeatNavigateCap, null);
+  assert.equal(loopLimits.emptyReadCap, null);
+  assert.equal(loopLimits.identicalErrorCap, null);
   assert.equal(batchLimits.streakCap, null);
 });
 

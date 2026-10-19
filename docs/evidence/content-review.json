@@ -1,7 +1,7 @@
 {
   "files": {
     "README.md": {
-      "sha256": "95d910fc529e46fce28764e933eadccd1e661182a39b6fc9cf113deff8597e63",
+      "sha256": "e80db71ef5bc690fdf068e6b06f3ce692284dfc6d2f500588b3789e2b034044c",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     },
@@ -51,12 +51,12 @@
       "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
     },
     "docs/DEFAULTS.md": {
-      "sha256": "603a1f7322cd42269c3bf494268dc023a922711809af8e74d3f196858ab4be09",
+      "sha256": "9c151ce6a321526b55cea70ae625a327c2afe04e197a88d8aecd0df9d7310873",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/RESULTS.md": {
-      "sha256": "a10bb2e6cb1bf18583194d08f6c2cdf0b1f4a66d98d0e531c3a534b5b98643a6",
+      "sha256": "f6a2b5e622d3d319b6a67b0312d5cdc28c10ae56da0d46a7ffbcf38fe5d9adf1",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     },
@@ -71,7 +71,7 @@
       "reason": "independent content review not run; WAIVED never blocks"
     },
     "docs/HYGIENE.md": {
-      "sha256": "8d4d1fc6a87a739942416b10f672295a136a0fd9c8e2dcab6e8de16f3efef234",
+      "sha256": "fa43afb0f7e23fbcbecf3a005b4c23f34843c9ea67dddc0261ec74c28bab97b8",
       "disposition": "WAIVED",
       "reason": "independent content review not run; WAIVED never blocks"
     },

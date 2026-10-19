@@ -16,9 +16,13 @@ export function proofBlock(rows,{now=Date.now(),root,warn=()=>{}}={}) {
     if(row.id.startsWith('E2') && row.claim_eligible!==true) continue;
     eligible.push(row);
   }
-  const body=eligible.slice(0,3).map(row=>`| ${cell(row.id)} | ${cell(row.claim)} | ${cell(row.median)} ${cell(row.unit)} | ${cell(row.measured_at)} | \`${cell(row.command)}\` |`).join('\n');
+  const body=eligible.slice(0,3).map(row=>{
+    const os={linux:'Linux',darwin:'macOS',win32:'Windows'}[row.machine?.os] || row.machine?.os || 'UNVERIFIED';
+    const environment=os==='Linux' && /^proof\/runs\/\d{4}-\d{2}-\d{2}-github-ubuntu\//.test(row.raw.path) ? `${os} (GitHub Actions ubuntu-latest)` : os;
+    return `| ${cell(row.id)} | ${cell(row.claim)} | ${cell(row.median)} ${cell(row.unit)} | ${cell(environment)} | ${cell(row.n ?? 'UNVERIFIED')} | ${cell(row.measured_at)} | \`${cell(row.command)}\` |`;
+  }).join('\n');
   const rerun=root ? `npx ${config(root).name} bench hygiene` : 'bench hygiene';
-  return `<!-- proof:start (generated; package rows only) -->\n${body?'| Row | Measurement | Median | Date | Rerun |\n|---|---|---|---|---|\n'+body+'\n':`Measurements await a completed benchmark. Rerun: \`${rerun}\`.\n`}<!-- proof:end -->`;
+  return `<!-- proof:start (generated; package rows only) -->\n${body?'| Row | Measurement | Median | OS | n | Date | Rerun |\n|---|---|---|---|---|---|---|\n'+body+'\n':`Measurements await a completed benchmark. Rerun: \`${rerun}\`.\n`}<!-- proof:end -->`;
 }
 export function replaceBlock(text,name,body) {
   const pattern=new RegExp(`<!-- ${name}:start[^>]*-->[\\s\\S]*?<!-- ${name}:end -->`,'g');

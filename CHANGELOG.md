@@ -25,6 +25,7 @@ Ships as 0.1.0.
 - **Hooks** for Claude Code, through the plugin
   - `aun-pick-guard` accepts isolated or throwaway profiles and refuses your own Chrome profile.
   - `aun-retry-guard` stops repeated waits, navigations, empty reads and identical errors.
+  - The `aun-retry-guard` wait guard is active with `waitCap=8`, calibrated on the R4 benchmark fixture and reset by a non-empty read.
   - `aun-batch-nudge` reminds the AI to batch when single actions pile up.
   - `aun-cleanup` stamps activity, blocks a stop once while run-created tabs or browsers are open, sweeps at session start, on each prompt and at session end, starts one idle timer per session, and tells the AI when a browser closed after sitting idle.
 - **`read`**

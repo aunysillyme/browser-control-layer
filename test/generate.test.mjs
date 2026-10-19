@@ -15,11 +15,16 @@ test('all host runners replace exactly supported fields and fit budget',()=>{
   assert.throws(()=>renderRunner(template+' {{OTHER}}',catalog(cfg)[0],'x'),/four/);
   assert.throws(()=>renderRunner(template,catalog(cfg)[0],'x'.repeat(5000)),/RUNNER_SIZE/);
 });
-const row={id:'H1',subject:'package',claim:'Owned processes remaining',median:0,unit:'processes',command:'tool bench hygiene',measured_at:'2026-01-01',expires_at:'2027-01-01',raw:{path:'proof/raw.jsonl',sha256:'a'.repeat(64)}};
-test('proof renders only package rows, drops expired rows, limits rows and binds date and command',()=>{
+const row={id:'H1',subject:'package',claim:'Owned processes remaining',median:0,unit:'processes',n:38,machine:{os:'linux'},command:'tool bench hygiene',measured_at:'2026-01-01',expires_at:'2027-01-01',raw:{path:'proof/runs/2026-01-01-github-ubuntu/h/raw.jsonl',sha256:'a'.repeat(64)}};
+test('proof renders only package rows, drops expired rows, limits rows and binds OS, n, date and command',()=>{
   const warnings=[]; const result=proofBlock([{...row,subject:'default',id:'R1'}, {...row,expires_at:'2020-01-01'},row,{...row,id:'H2'},{...row,id:'H3'},{...row,id:'H4'}],{now:Date.parse('2026-02-01'),warn:s=>warnings.push(s)});
   assert.ok(!result.includes('R1')); assert.ok(!result.includes('H4')); assert.equal(warnings.length,1);
   assert.ok(result.includes(row.measured_at)); assert.ok(result.includes(row.command));
+  assert.ok(result.includes('| OS | n |'));
+  assert.ok(result.includes('| Linux (GitHub Actions ubuntu-latest) | 38 |'));
+  const local=proofBlock([{...row,n:7,raw:{...row.raw,path:'proof/raw.jsonl'}},{...row,id:'H2',n:9,machine:{os:'darwin'}}],{now:0});
+  assert.ok(local.includes('| Linux | 7 |')); assert.ok(local.includes('| macOS | 9 |'));
+  assert.ok(!local.includes('GitHub Actions'));
   assert.throws(()=>proofBlock([{...row,raw:{}}],{now:0}),/PROOF_BINDING/);
   assert.ok(!proofBlock([{...row,id:'E2'}],{now:0}).includes('| E2 |'));
   assert.ok(proofBlock([{...row,id:'E2',claim_eligible:true}],{now:0}).includes('| E2 |'));

@@ -14,7 +14,8 @@
 
 <!-- trailer: restored when docs/trailer.gif lands -->
 
-<!-- proof:start (generated from proof/results.json; package rows only; 3 rows max; each with date and rerun command) -->
+<!-- proof:start (generated; package rows only) -->
+Measurements await a completed benchmark. Rerun: `npx browser-control-layer bench hygiene`.
 <!-- proof:end -->
 
 This release works on public pages, in isolated or throwaway browser profiles, and leaves your own Chrome profile untouched. The package closes the browsers it can prove it owns. A browser from a driver it does not recognize is listed by `doctor` and left running.

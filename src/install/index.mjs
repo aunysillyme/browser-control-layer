@@ -135,6 +135,7 @@ export async function installCommand(args=[],options={}) {
     while(true) {
       const plan=planInstall({root,cwd,host});
       output(JSON.stringify({host,files:plan.entries.map(({path,sha256,action})=>({path,sha256,action})),receipt:plan.receiptPath,companions:plan.companions},null,2));
+      output(`Optional scheduled cleanup (opt-in; configure your own scheduler): npx ${config(root).name} reap --idle`);
       if(dryRun) return 0;
       const answer=(await prompt('Install this plan? [y/N/edit <host>] ')).trim();
       if(answer.startsWith('edit ')) { host=answer.slice(5).trim(); output(`Hosts: ${catalog(config(root)).map(item=>item.id).join(', ')}`); continue; }

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { config } from '../src/config.mjs';
 import { catalog,renderRunner } from '../src/install/catalog.mjs';
 import { proofBlock,generatedPack } from '../src/build/pack.mjs';
+import { generateDrivers } from '../src/build/drivers.mjs';
 const cfg=config(), template=readFileSync(`${cfg.core}/runners/aun-runner-browser.template.md`,'utf8');
 test('all host runners replace exactly supported fields and fit budget',()=>{
   for(const host of catalog(cfg)) {
@@ -52,4 +53,10 @@ test('vendored set bytes bind both lock hashes and pending renderer is explicit'
   assert.equal(lock.renderer_sha256,null);
   assert.equal(lock.source,JSON.parse(readFileSync('.repo-build/config.json','utf8')).set.source);
   assert.notEqual(createHash('sha256').update(Buffer.concat([bytes,Buffer.from(' ')] )).digest('hex'),lock.sha256);
+});
+
+test('driver reference pins and sources derive from the driver registry',()=>{
+  const data=JSON.parse(readFileSync('bench/drivers.json','utf8'));
+  const body=generateDrivers(process.cwd())[`${cfg.core}/references/drivers.md`];
+  for(const row of [...data.drivers,data.browser]) assert.ok(body.includes(`| ${row.package} | ${row.version} | [Vendor](${row.source}) |`));
 });

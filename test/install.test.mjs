@@ -12,6 +12,8 @@ test('catalog paths and dry-run exactly match the confirmed writes for each host
     await installCommand(['--host',host,'--dry-run'],{cwd,write:s=>output.push(s)});
     assert.equal(existsSync(join(cwd,`.${cfg.skillName}`)),false);
     const preview=JSON.parse(output[0]); let confirms=0;
+    assert.ok(output.some(line=>line.includes(`opt-in; configure your own scheduler): npx ${cfg.name} reap --idle`)));
+    assert.ok(!preview.files.some(file=>/cron|launchagents|systemd/i.test(file.path)));
     await installCommand(['--host',host],{cwd,write:()=>{},prompt:async()=>{confirms++;return 'y';}});
     const receipt=JSON.parse(readFileSync(join(cwd,preview.receipt),'utf8'));
     assert.equal(confirms,1);

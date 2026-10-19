@@ -19,9 +19,9 @@ if (args[0] === 'terms') {
     const prior=existsSync(join(root,name)) ? read(root,name) : '';
     const entry=review.files[name];
     if ((name==='README.md' || name.startsWith('docs/')) && name.endsWith('.md') && (prior.startsWith('<!-- stub:') || entry?.sha256===digest(prior))) {
-      review.files[name]={...entry,sha256:digest(body),disposition:'WAIVED',reason:'Generated from repository sources; independent content review remains a release task.'};
+      review.files[name]={...entry,sha256:digest(body),disposition:'WAIVED',reason:entry?.disposition==='WAIVED' && entry.reason ? entry.reason : 'Generated from repository sources; independent content review remains a release task.'};
     }
-    mkdirSync(dirname(join(root, name)), { recursive: true }); writeFileSync(join(root, name), body);
+    if (prior!==body) { mkdirSync(dirname(join(root, name)), { recursive: true }); writeFileSync(join(root, name), body); }
   }
   writeFileSync(join(root,reviewPath),JSON.stringify(review,null,2)+'\n');
   if (args[0] === '--rehash') {

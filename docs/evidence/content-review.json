@@ -1,0 +1,54 @@
+{
+  "files": {
+    "README.md": {
+      "sha256": "c35d18403c66b8019e99b158e75e6213c5550f59142efb9b013d7866c7cf00e1",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "CREDITS.md": {
+      "sha256": "c35d18403c66b8019e99b158e75e6213c5550f59142efb9b013d7866c7cf00e1",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "docs/METHOD.md": {
+      "sha256": "7210e3424bc953749a4c0e2897dc728de021488e4a3753c1dd79440dc2cd1d44",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "docs/PROVENANCE.md": {
+      "sha256": "f660e226163186a38af75db8d40c5bdcd87cceb70cda4f17e6fb93828228db62",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "adapters/agents-md.md": {
+      "sha256": "b31195b9bf60394473102686a0468af7308a615dcdabcde6d66e9db300ec2b39",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "adapters/claude-code.md": {
+      "sha256": "3d282100cbfb37d74d65bd81c12512b408a8c80e5265d2c490b978b5494e04c9",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "adapters/codex.md": {
+      "sha256": "346f7ddd56cb196cb68a38c5df90eca26d4072564c4058960c7c586a3ffcc341",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "adapters/cursor.md": {
+      "sha256": "34cc3a0ffc462c0b106bdbabb38593aca81a9e64d20ca4278a401ea5700034dd",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "adapters/gemini-cli.md": {
+      "sha256": "ba9f536ff4f360fdfa5936aa51e7a0f72d3f11b490512a276dec7943cff1adc9",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "adapters/zero-install.md": {
+      "sha256": "524227d25b9c4d50386597a4ee51e3330c7e691b968495149e48efd5b55c6a26",
+      "disposition": "WAIVED",
+      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    }
+  }
+}

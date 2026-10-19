@@ -6,82 +6,82 @@
     {
       "path": "checklists/route.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "55e8ba6b11ef53da3b01a78839217439bdb44899caf6f5471201f83f89bcfa4e"
     },
     {
       "path": "checklists/run.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "a2f87998016e73dc572a63a0432367dfb76d2086757bf1d9ffc513a588ec5f3f"
     },
     {
       "path": "method/01-cost-model.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "f3d92b8380f11a7f2e544835dc0ebcbe3334353939dd6f9824624447c082d326"
     },
     {
       "path": "method/02-route-by-job.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "a35ae2b73179f6c921e4526ea93191dbb22a676849c868906a3a2260a134dead"
     },
     {
       "path": "method/03-batch-first.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "3b9ccc5bfd95e1884f3d42d882abd6c6766e9aa610fdaf2eca0f2f203c53a2ef"
     },
     {
       "path": "method/04-close-what-you-open.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "4885a6ac949c3b00c37ace45cdf0508d3e8e9855b23ed1365ad45249d18321dd"
     },
     {
       "path": "method/05-resources.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "45c764a2dc03f8b49c99c363b22314cc4cb386e3eb1614c97491f5035c2ebb2e"
     },
     {
       "path": "method/06-profiles-and-site-rules.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "a2bdc714b9c5ee28eb33726e5d3bce3b098e54cca2b43a6bff680887293f7497"
     },
     {
       "path": "method/07-verify-and-report.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "9a99665bb1b4188396ae10f565fc13b639709f82bbd3e2ac871c29892cc0bbb0"
     },
     {
       "path": "playbooks/fetch-order.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "a39ecf6b64497da3038863c7d0dded490b3131361ceeb8fddec3aa6fb526e34c"
     },
     {
       "path": "playbooks/indexed-actions.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "19def8ac034e358ab494bd53293d42b0e7b38ba45e6433da0ead3eda60c47f28"
     },
     {
       "path": "playbooks/remote-browser.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "eb568dd65f0bd34612ed10fb62d7f857f7dbc2a74b704ab586ba4f509dba72ec"
     },
     {
       "path": "playbooks/scoped-extraction.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "7136ccbc6fea8e5efb137b2c49123215655f165f9db56ce8a3eff4fded079e5a"
     },
     {
       "path": "playbooks/snapshot-refs.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "0018678cc1cc7ef9f445687034704c274050f32f54188ada880a97a4da953864"
     },
     {
       "path": "playbooks/stop-rules.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "d610d9d8008473176678fb7ebbb43f468c7b188823b39be29ed872be931d8976"
     },
     {
       "path": "playbooks/wait-for-element.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "7644672d3d27fda5a299262577606e3dda822a57b37af2b0afd4fa2cfc6fbd19"
     },
     {
       "path": "references/defaults.md",
@@ -96,22 +96,22 @@
     {
       "path": "runners/aun-runner-browser.template.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "a868e77593e624d53a1215af124de064329fff14c525525af6a675323f807107"
     },
     {
       "path": "runners/brief.template.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "2b5ad11255ab1fe2b0af6519ef8c5bb750c4066e25e080fb35bf81077986c641"
     },
     {
       "path": "runners/report.template.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "879f92fe92a5c7359709fb00a9d1866a9a015e44a4a5cafa52185ffc5dd4aab1"
     },
     {
       "path": "SKILL.md",
       "active": true,
-      "sha256": "96bcac29322a3984ecfd2ff3afe17b004b370734f0e7989a5c0aae456d59cd12"
+      "sha256": "2e91be167db6ebd021d34044bc09b6f0e811a0f41a8c0dba6a7c29fabd44d91d"
     }
   ],
   "stageRoutes": [
@@ -182,5 +182,14 @@
     "runnerBytes": 4096,
     "briefBytes": 2048
   },
-  "claims": []
+  "claims": [
+    {
+      "kind": "runner",
+      "path": "agents/aun-runner-browser.md"
+    },
+    {
+      "kind": "hooks",
+      "path": "hooks/hooks.json"
+    }
+  ]
 }

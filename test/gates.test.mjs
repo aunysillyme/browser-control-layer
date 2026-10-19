@@ -57,12 +57,12 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
       update(root,`${core}/manifest.json`,m=>m.bundles={sample:['SKILL.md']}); put(root,'docs/bundles/sample.md','stale');
     },()=>put(root,'docs/bundles/sample.md',generated(root)['docs/bundles/sample.md']));
     await pair('LICENSE_SOURCE',['docs/evidence/sources.json'],()=>put(root,'docs/evidence/sources.json',[{url:'https://example.com/project',kind:'code',license:'AGPL-3.0'}]),()=>put(root,'docs/evidence/sources.json',[{url:'https://example.com/project',kind:'code',license:'MIT'}]));
-    await pair('CREDITS',['docs/evidence/sources.json','CREDITS.md','README.md'],()=>put(root,'docs/evidence/sources.json',[{url:'https://example.com/project',kind:'code',license:'MIT'}]),()=>{
+    await pair('CREDITS',['docs/evidence/sources.json','CREDITS.md','README.md','docs/PROVENANCE.md'],()=>{put(root,'docs/PROVENANCE.md',STUB);put(root,'docs/evidence/sources.json',[{url:'https://example.com/project',kind:'code',license:'MIT'}]);},()=>{
       put(root,'README.md',STUB+'\nCredit: https://example.com/project\n'); put(root,'CREDITS.md','| Project | License |\n| https://example.com/project | MIT |\n');
     });
     await pair('CLAIM_EVIDENCE',['README.md','docs/evidence/content-review.json'],()=>{
       put(root,'README.md','# Read public pages\n'); put(root,'docs/evidence/content-review.json',{files:{'README.md':{sha256:'a'.repeat(64),disposition:'WAIVED'}}});
-    },()=>put(root,'docs/evidence/content-review.json',{files:{'README.md':{sha256:digest(readFileSync(join(root,'README.md'))),disposition:'WAIVED',reason:'Synthetic gate fixture'}}}));
+    },()=>{const ledger=json(base,'docs/evidence/content-review.json'); ledger.files['README.md']={sha256:digest(readFileSync(join(root,'README.md'))),disposition:'WAIVED',reason:'Synthetic gate fixture'};put(root,'docs/evidence/content-review.json',ledger);});
     const raw='{}\n', row={id:'H5',subject:'package',command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:digest(raw)},measured_at:'2026-01-01',expires_at:'2099-01-01'};
     await pair('PROOF_BINDING',['README.md'],()=>put(root,'README.md',STUB+'\n40% fewer tokens\n'),()=>put(root,'README.md',STUB+'\nRead public pages.\n'));
     await pair('PROOF_SCOPE',['README.md','proof/results.json','proof/raw.jsonl'],()=>{

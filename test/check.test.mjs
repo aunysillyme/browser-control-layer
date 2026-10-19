@@ -31,6 +31,11 @@ test('renamed tree passes NAME_PARAM and all current checks without local privat
     renameSync(join(root,'skills',old),join(root,'skills',p.name));
     const path=join(root,'skills',p.name,'manifest.json'), m=JSON.parse(readFileSync(path,'utf8')); m.skillName=p.name; writeFileSync(path,JSON.stringify(m));
     const pp=join(root,'.claude-plugin/plugin.json'), plugin=JSON.parse(readFileSync(pp,'utf8')); plugin.name=p.name; writeFileSync(pp,JSON.stringify(plugin));
+    for (const name of files(root).filter(n=>n.endsWith('.md') || n==='llms.txt')) writeFileSync(join(root,name),readFileSync(join(root,name),'utf8').replaceAll(old,p.name));
+    const ledgerPath=join(root,'docs/evidence/content-review.json'), ledger=JSON.parse(readFileSync(ledgerPath,'utf8'));
+    for (const [name,entry] of Object.entries(ledger.files)) entry.sha256=digest(readFileSync(join(root,name)));
+    writeFileSync(ledgerPath,JSON.stringify(ledger));
+    assert.equal(spawnSync(process.execPath,['scripts/build.mjs','--rehash'],{cwd:root,encoding:'utf8'}).status,0);
     assert.deepEqual(check(root).issues,[]);
     const built=spawnSync(process.execPath,['scripts/build.mjs'],{cwd:root,encoding:'utf8'});
     assert.equal(built.status,0,built.stderr);

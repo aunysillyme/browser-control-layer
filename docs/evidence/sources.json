@@ -1,0 +1,98 @@
+[
+  {
+    "name": "trycua/cua",
+    "url": "https://github.com/trycua/cua",
+    "license": "MIT",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "browser-use/jev-ultrafast",
+    "url": "https://github.com/browser-use/jev-ultrafast",
+    "license": "MIT",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "cloudflare/agents",
+    "url": "https://github.com/cloudflare/agents",
+    "license": "MIT",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "cloudflare/cloudflare-docs",
+    "url": "https://github.com/cloudflare/cloudflare-docs",
+    "license": "CC-BY-4.0",
+    "date": "2026-10-18",
+    "kind": "docs",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "MirzaMotoTech/agent-browser-hygiene",
+    "url": "https://github.com/MirzaMotoTech/agent-browser-hygiene",
+    "license": "MIT",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "rtk-ai/rtk",
+    "url": "https://github.com/rtk-ai/rtk",
+    "license": "Apache-2.0",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "microsoft/playwright-mcp",
+    "url": "https://github.com/microsoft/playwright-mcp",
+    "license": "Apache-2.0",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "ChromeDevTools/chrome-devtools-mcp",
+    "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+    "license": "Apache-2.0",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "vercel-labs/agent-browser",
+    "url": "https://github.com/vercel-labs/agent-browser",
+    "license": "Apache-2.0",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "puppeteer/puppeteer",
+    "url": "https://github.com/puppeteer/puppeteer",
+    "license": "Apache-2.0",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "unclecode/crawl4ai",
+    "url": "https://github.com/unclecode/crawl4ai",
+    "license": "Apache-2.0",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  },
+  {
+    "name": "aunysillyme/website-build-skill",
+    "url": "https://github.com/aunysillyme/website-build-skill",
+    "license": "MIT",
+    "date": "2026-10-18",
+    "kind": "technique",
+    "evidence": "docs/PROVENANCE.md"
+  }
+]

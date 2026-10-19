@@ -184,7 +184,8 @@ export function check(root, options = {}) {
   protect('CONCEPT_MAP',() => {
     const provenance=read(root,'docs/PROVENANCE.md');
     if (provenance.startsWith(STUB)) { warnings.push('CONCEPT_MAP:prose stub awaits concept rows'); return; }
-    const rows=provenance.split('\n').filter(s=>s.startsWith('|') && !/^\|\s*(?:Concept|[-:])/.test(s));
+    const conceptSection=provenance.includes('## Concepts') ? provenance.split('## Concepts')[1].split(/^## /m)[0] : provenance;
+    const rows=conceptSection.split('\n').filter(s=>s.startsWith('|') && !/^\|\s*(?:Concept|[-:])/.test(s));
     if (!rows.length) add('CONCEPT_MAP','concept rows required');
     for (const line of rows) {
       const cells=line.split('|').slice(1,-1).map(s=>s.trim());
@@ -192,7 +193,7 @@ export function check(root, options = {}) {
       if (!/aun-[a-z-]+|[\w.-]+\/[\w.-]+|https:\/\/|Agents SDK|Browser Run|Playwright MCP/.test(cells[1])) add('CONCEPT_MAP','public concept name');
       const paths=[...cells[2].matchAll(/`([^`]+)`/g)].map(m=>m[1]);
       if (!paths.length || paths.some(p=>!existsSync(join(root,p)) && !existsSync(join(root,core,p)))) add('CONCEPT_MAP','reference missing');
-      if (!/`[^`]+`|\b(?:template|hook|runner rule|brief field|report template|profile classes)\b/i.test(cells[3])) add('CONCEPT_MAP','usable artifact missing');
+      if (!/`[^`]+`|\b(?:templates?|hooks?|runner rule|brief field|report template|profile classes)\b/i.test(cells[3])) add('CONCEPT_MAP','usable artifact missing');
     }
   });
   protect('NAME_PARAM',() => { for (const name of names.filter(n=>n.startsWith('src/') && n!=='src/config.mjs')) if (read(root,name).includes(pkg.name) || read(root,name).includes(core)) add('NAME_PARAM',name); });
@@ -210,7 +211,8 @@ export function check(root, options = {}) {
     }
     const sources=JSON.parse(read(root,path));
     const provenance=read(root,'docs/PROVENANCE.md');
-    if (!provenance.startsWith(STUB)) for (const match of provenance.matchAll(/https:\/\/(?:github\.com\/[^\s/|)`]+\/[^\s/|)`]+|developers\.[^\s|)`]+)/g)) {
+    const activeSources=provenance.split('\n').filter(line=>line.startsWith('|')).join('\n');
+    if (!provenance.startsWith(STUB)) for (const match of activeSources.matchAll(/https:\/\/(?:github\.com\/[^\s/|)`]+\/[^\s/|)`]+|developers\.[^\s|)`]+)/g)) {
       if (!sources.some(source=>source.url===match[0])) add('CREDITS',`${match[0]}:source ledger entry required`);
     }
     for (const source of sources) {

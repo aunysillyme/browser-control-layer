@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { config } from '../src/config.mjs';
 import { digest, files, read, generated } from '../src/build/bundle.mjs';
 import { normalize } from '../src/build/validate.mjs';
+import { stageRoutes } from '../src/build/manifest.mjs';
 
 const root = process.cwd(), args = process.argv.slice(2);
 if (args[0] === 'terms') {
@@ -13,6 +14,8 @@ if (args[0] === 'terms') {
   const { core, manifest } = config(root);
   if (args[0] === '--rehash') {
     manifest.assets = files(root, core).filter(p => !p.endsWith('/manifest.json')).map(p => ({ path: p.slice(core.length + 1), active: true, sha256: digest(read(root, p)) }));
+    if (!read(root, `${core}/SKILL.md`).startsWith('<!-- stub:')) manifest.stageRoutes = stageRoutes(read(root, `${core}/SKILL.md`));
+    manifest.claims = [{kind:'runner',path:'agents/aun-runner-browser.md'}, {kind:'hooks',path:'hooks/hooks.json'}];
     writeFileSync(join(root, core, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   } else if (args.length) throw Error('Usage: build.mjs [--rehash|terms]');
   for (const [name, body] of Object.entries(generated(root))) {

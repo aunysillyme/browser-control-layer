@@ -16,17 +16,19 @@ const daemons = {
 export const RECIPES = Object.freeze(catalog.drivers.map(driver => ({
   id: driver.id, version: driver.version, daemon: daemons[driver.id],
   executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium', 'chrome-headless-shell'],
+  platformExecutables: { darwin: ['Google Chrome for Testing'] },
   automationFlags: [driver.id === 'agent-browser' ? '--remote-debugging-port=0' : '--remote-debugging-pipe'],
   profileClass: driver.variants[0].profileClass,
   source: driver.source, verification: catalog.verification,
   driverExecutables: [process.execPath],
+  platformDriverExecutables: { darwin: ['node'] },
   driverArg: arg => arg === driver.command || arg.replaceAll('\\', '/').includes(`/${driver.package}/`) || arg.replaceAll('\\', '/').endsWith(`/${driver.command}`),
   matchesProfile: profile => profilePatterns[driver.id]?.test(profile.replaceAll('\\', '/')) === true
 })));
 
-export function matchRecipe(processInfo, { recipes = RECIPES, versions = {} } = {}) {
+export function matchRecipe(processInfo, { recipes = RECIPES, versions = {}, platform = processInfo?.platform || process.platform, processAdapter } = {}) {
   if (!processInfo?.readable || !processInfo.argv?.length || !processInfo.executable) return null;
   const profile = profileArgument(processInfo.argv);
   if (!profile) return null;
-  return recipes.find(recipe => typeof recipe.version === 'string' && recipe.version.length > 0 && versions[recipe.id] === recipe.version && recipe.executables.includes(basename(processInfo.executable)) && recipe.automationFlags.every(flag => processInfo.argv.includes(flag)) && typeof recipe.matchesProfile === 'function' && recipe.matchesProfile(profile)) || null;
+  return recipes.find(recipe => typeof recipe.version === 'string' && recipe.version.length > 0 && versions[recipe.id] === recipe.version && [...recipe.executables, ...(recipe.platformExecutables?.[processAdapter?.platform || platform] || [])].includes(basename(processInfo.executable)) && recipe.automationFlags.every(flag => processInfo.argv.includes(flag)) && typeof recipe.matchesProfile === 'function' && recipe.matchesProfile(profile)) || null;
 }

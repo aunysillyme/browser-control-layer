@@ -10,16 +10,18 @@ export function parseProcessTable(text) {
     // ps cannot preserve argv boundaries. The root profile flag is parsed only
     // when its absolute value has an unambiguous end at the next option.
     const profile = command.match(/(?:^|\s)--user-data-dir=(\/.*?)(?=\s--|$)/)?.[1];
-    const app = command.match(/^(\/.*?\.app\/Contents\/MacOS\/[^]*?)(?=\s--|$)/)?.[1];
-    const executable = app || command.match(/^(\/\S+)(?=\s|$)/)?.[1];
+    // A worker's JSON arguments can contain an app path. It is not its executable.
+    const app = command.match(/^(\/[^"'{}\n]*?\.app\/Contents\/MacOS\/[^]*?)(?=\s--|$)/)?.[1];
+    const node = command.match(/^(node)\s+\/[^\s"'{}]+(?=\s|$)/)?.[1];
+    const executable = (app && !/\s\//.test(app) ? app : null) || command.match(/^(\/\S+)(?=\s|$)/)?.[1] || node;
     const flags = command.match(/--[\w-]+(?:=[^\s]+)?/g) || [];
     const argv = executable ? [executable, ...flags.filter(arg => !arg.startsWith('--user-data-dir'))] : [];
     // Preserve an unambiguous absolute entry script for driver ancestry. ps
     // cannot recover paths containing spaces, so those remain report-only.
-    const script=executable && command.slice(executable.length).match(/^\s+(\/[^\s]+\.(?:mjs|cjs|js))(?=\s|$)/)?.[1];
+    const script=executable && command.slice(executable.length).match(/^\s+(\/[^\s"'{}]+)(?=\s|$)/)?.[1];
     if (script) argv.splice(1,0,script);
     if (profile) argv.push(`--user-data-dir=${profile}`);
-    return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, executable, argv, command, identityReadable: true, readable: Boolean(executable) };
+    return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, executable, argv, command, platform: 'darwin', identityReadable: true, readable: Boolean(executable) };
   });
 }
 

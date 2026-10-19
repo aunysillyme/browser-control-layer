@@ -85,25 +85,19 @@ async function fixture(platform, race, { survivors = false, late = false } = {})
 }
 
 for (const platform of ['darwin', 'linux']) {
-  test(`${platform} owned arrival keeps the platform's inspection boundary`, async () => {
+  test(`GREEN ${platform} owned arrival converges with ancestry proof`, async () => {
     const f = await fixture(platform, 'arrival-owned');
     const groupDiagnostics = [];
     const members = await verifiedGroup(f.record, { ...f, groupDiagnostics });
-    if (platform === 'darwin') {
-      assert.deepEqual(members.map(row => row.pid), [100, 101, 102, 103]);
-      assert.equal(groupDiagnostics.find(row => row.pid === 103).reason, 'helper-ancestry-verified');
-      assert.equal(f.listCount(), 3);
-    } else {
-      assert.equal(members, null);
-      assert.equal(groupDiagnostics.find(row => row.pid === 103).reason, 'member-unobserved');
-      assert.equal(f.listCount(), 2);
-    }
+    assert.deepEqual(members.map(row => row.pid), [100, 101, 102, 103]);
+    assert.equal(groupDiagnostics.find(row => row.pid === 103).reason, 'helper-ancestry-verified');
+    assert.equal(f.listCount(), 3);
   });
 
   for (const race of ['exit-before-inspect', 'exit-environment', 'reuse-outside']) test(`GREEN ${platform} ${race} drops the old helper and signals the owned group`, async () => {
     const f = await fixture(platform, race);
     assert.deepEqual((await verifiedGroup(f.record, f))?.map(row => row.pid).sort(), [100, 102]);
-    assert.equal(f.listCount(), 2);
+    assert.equal(f.listCount(), 3);
     const g = await fixture(platform, race);
     assert.equal((await signalOwned(g.record, { ...g, group: true })).sent, true);
     assert.deepEqual(g.signals, [{ pid: -100, signal: 'SIGTERM' }]);

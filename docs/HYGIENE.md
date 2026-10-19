@@ -19,27 +19,23 @@ Run `npx browser-control-layer <command>`:
 
 ## Profiles and ownership
 
-User/unrecognized resources are report-only. Persistent driver directories stay; verified roots close gracefully. Throwaway directories are removed only after verified exit and path checks.
+User/unrecognized resources are report-only. Persistent directories stay. Throwaway removal needs verified exit, real path, quarantine, inode/device and process-use checks. [Path rules](../src/hygiene/profiles.mjs); [ownership rules](SECURITY-MODEL.md).
 
-[profiles.mjs](../src/hygiene/profiles.mjs) recognizes user paths lexically. Removal verifies the real path, quarantines the directory, checks inode/device and process use again. Refusals appear in action results.
+Leases need matching owner file/token/path/group/start. Recipes need executable/flags/profile plus parent exit or idle expiry; session cleanup can close active runs. Recipes get root TERM only. Daemons need a rechecked stamped session; remote closes use recorded ids. Unreadable ownership refuses signals.
 
-`lease -- <command> --user-data-dir={profile}` requires matching owner file, token, path, group and start. Pinned recipes require executable/flags/profile; orphans need parent exit, idle needs expiry. Session cleanup can close active records. Recipes get root SIGTERM only. Daemons need a stamped session, rechecked before close. Remote cleanup uses recorded ids; hooks rely on vendor expiry. Unreadable ownership refuses signals. [Full rules](SECURITY-MODEL.md).
+## Process verification
 
-## macOS process verification
+[macOS inspection](../src/proc/platform/darwin.mjs) binds `ps` replies to kernel identities/state. Node drivers need absolute scripts or pinned titles verified with `ucomm` and `lsof`. Version, profile and stamped ancestry/session still apply. Unreadable identity refuses attribution.
 
-[darwin.mjs](../src/proc/platform/darwin.mjs) reads `ps` identity/state. `-Eww` environment replies must name exactly the requested PID. Tokenless helpers need ancestry to the token-verified root. Conflicting tokens or live unreadable identities refuse group signals; zombies need none.
+[Group verification](../src/proc/signals.mjs): macOS/Linux require two matching live memberships within `GROUP_VERIFY_SNAPSHOTS = 6` inventories, including the first. Arrivals are inspected; final identities must match first observations. Roots need tokens; tokenless helpers need kernel ancestry to that root. Foreign tokens refuse, even after departure.
 
-Node drivers need absolute entry scripts or the pinned title with `ucomm=node` and a first `lsof` text mapping to Node's real path. PID/start/user/parent/group and title must stay fixed across reads. Failed inspection refuses attribution. Version/profile/automation and stamped ancestry/session remain required. Owner exit needs a missing PID or changed start.
+Positive `termGraceMs` caps retries after current reads/inspections. [Default grace](DEFAULTS.md) is unset; unset/zero uses the snapshot cap. Unstable groups refuse, dumping final members and marking membership changes `unstable`. All modes share TERM/KILL proof. Refused TERM prevents escalation; survivors are rechecked after environment reads.
 
-[signals.mjs](../src/proc/signals.mjs) rechecks ownership before signals, refreshes inventory and drops departed helpers. macOS inspects arrivals once; further arrivals, replacements or failed reads refuse the group. Linux refuses arrivals. Survivors are rechecked after environment reads.
-
-macOS waits through TERM grace. Sent TERM plus fresh proof permit leased-group KILL and exit grace. Survivors, including zombies, keep cleanup incomplete and profiles intact; `remainingMembers` lists identities/reasons. [Grace evidence](DEFAULTS.md).
-
-Dumps include member reasons and E1 command classification, excluding environments/tokens. Check: `node --test`; CI: [browser.yml](../.github/workflows/browser.yml). Nothing separately monitors recipes.
+macOS observes exit through each signal's grace. KILL needs sent TERM and fresh proof. Live/zombie survivors keep cleanup incomplete and profiles intact; `remainingMembers` lists them. Dumps omit tokens/environments. Check: `node --test`; CI: [browser.yml](../.github/workflows/browser.yml). Nothing separately monitors recipes.
 
 ## Activity and triggers
 
-[Ledger](../src/hygiene/ledger.mjs): owner-only identity/activity/budget/tab/remote records, locked atomic writes, symlink refusal. Roots: `$XDG_STATE_HOME/browser-control-layer` (Linux; fallback `~/.local/state/browser-control-layer`), `~/Library/Application Support/browser-control-layer` (macOS), `%LOCALAPPDATA%/browser-control-layer` (Windows).
+[Ledger](../src/hygiene/ledger.mjs): owner-only records, locked atomic writes, symlink refusal. Roots: `$XDG_STATE_HOME/browser-control-layer` (Linux; fallback `~/.local/state/browser-control-layer`), `~/Library/Application Support/browser-control-layer` (macOS), `%LOCALAPPDATA%/browser-control-layer` (Windows).
 
 Stamps renew matching session/host/driver records and leases. CLI: `AUN_SESSION_KEY`, `AUN_HOST_PID`, `AUN_DRIVER_ID`, `AUN_DRIVER_VERSION`. [Sweeps](../src/hygiene/sweep.mjs) without context report only.
 
@@ -62,10 +58,10 @@ Stamps renew matching session/host/driver records and leases. CLI: `AUN_SESSION_
 
 [Settings](../src/hygiene/defaults.json) need [evidence](DEFAULTS.md); null stays pending. [Headroom](../src/hygiene/headroom.mjs) needs thresholds; [budgets](../src/hygiene/budget.mjs) need finite caps and CPU window/samples. `top` has no monitor. Leases measure groups; recipes measure roots.
 
-[Resource practices](../skills/browser-control-layer/method/05-resources.md) cover batching, isolated profiles, finally-close and measured limits.
+[Resource practices](../skills/browser-control-layer/method/05-resources.md).
 
 ## Read the cleanup line
 
 `cleanup: browsers=<closed>/<owned> tabs=<closed>/<owned> sessions=<closed>/<owned> remaining=<n> checks=<ps|tabs|api>`
 
-`checks` lists passed probes. Missing probes and incomplete `remaining` print `UNVERIFIED`. Tabs need an injected probe. Remaining resources or unverified state exit 3. Repair the action reason and rerun scoped cleanup.
+`checks` lists passed probes. Missing probes print `UNVERIFIED`; tabs need an injected probe. Leftovers/unverified state exit 3. Resolve the action reason, then rerun scoped cleanup.

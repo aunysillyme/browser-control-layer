@@ -123,9 +123,10 @@ export async function cleanup(input) {
     const action = { id: record.id, profileClass: record.profileClass };
     if (mode === 'budget' && proof.owned) result.warnings.push(`Resource budget exceeded for owned run ${record.id}`);
     if (proof.owned) {
-      const members = record.kind === 'leased' ? await verifiedGroup(record, options) : [];
+      const groupDiagnostics = [];
+      const members = record.kind === 'leased' ? await verifiedGroup(record, { ...options, groupDiagnostics }) : [];
       if (members) { record.members = members; await ledger.update(record.id, old => ({ ...old, members })); }
-      action.signal = await signalOwned(record, { ...options, group: record.kind === 'leased', signal: 'SIGTERM' });
+      action.signal = members ? await signalOwned(record, { ...options, group: record.kind === 'leased', signal: 'SIGTERM' }) : { sent: false, reason: 'group-unverified', group: groupDiagnostics };
       const grace = options.termGraceMs ?? defaults.termGraceMs.value;
       if (action.signal.sent && Number.isFinite(grace) && grace >= 0) {
         if (processAdapter.platform === 'darwin') await waitForDarwinExit(record, options, grace);
@@ -133,7 +134,7 @@ export async function cleanup(input) {
       }
       if (record.daemon) action.driverClose = await closeDaemonSession(record, proof, options);
       const after = await inspect(processAdapter, record.pid);
-      if (after && record.kind === 'leased' && Number.isFinite(grace) && grace >= 0 && (processAdapter.platform !== 'darwin' || action.signal.sent)) {
+      if (after && record.kind === 'leased' && Number.isFinite(grace) && grace >= 0 && action.signal.sent) {
         action.escalation = await signalOwned(record, { ...options, group: true, signal: 'SIGKILL' });
         if (processAdapter.platform === 'darwin' && action.escalation.sent) await waitForDarwinExit(record, options, grace);
       }

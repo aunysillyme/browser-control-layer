@@ -1,11 +1,16 @@
 import { owns, sameIdentity, inspect, leaseProof } from './owns.mjs';
 import { samePath, profileArgument, PROFILE } from '../hygiene/profiles.mjs';
+import defaults from '../hygiene/defaults.json' with { type: 'json' };
+
+export const GROUP_VERIFY_SNAPSHOTS = 6;
 
 // A zombie holds no memory and takes no signal; it is reaped with its parent.
 // Chrome helpers can have unreadable environments. A helper
 // that shows no token is accepted only when its parent chain reaches the token-verified root.
 export async function verifiedGroup(record, options) {
   const { processAdapter } = options;
+  const grace = options.termGraceMs ?? defaults.termGraceMs.value;
+  const deadline = Number.isFinite(grace) && grace > 0 ? performance.now() + grace : Infinity;
   const diagnostics = options.groupDiagnostics || [];
   const report = (row, verdict, reason, extra = {}) => {
     const result = { pid: row?.pid, ppid: row?.ppid, pgid: row?.pgid, state: row?.state, startTime: row?.startTime, readable: row?.readable, exe: row?.executable?.split('/').pop(), type: row?.argv?.find(arg => arg.startsWith('--type=')), verdict, reason, ...extra };
@@ -34,33 +39,32 @@ export async function verifiedGroup(record, options) {
     observations.set(member.pid, { member, fresh, token });
   };
   for (const member of initial) await observe(member);
-  // Helpers can exit during inspection. Refresh once to omit departed identities
-  // and refuse new or replaced processes that a group signal would also reach.
-  try { table = await processAdapter.list(); }
-  catch (error) {
-    for (const member of initial) report(member, 'refused', 'final-list-failed', { error: error.code || 'PROCESS_LIST' });
-    return null;
-  }
-  // macOS helpers can join while ps inspects the first snapshot. Inspect those
-  // identities once, then refresh again; further arrivals remain unverified.
-  const arrivals = table.filter(row => row.pgid === record.pgid && row.state !== 'Z' && !observations.has(row.pid));
-  if (processAdapter.platform === 'darwin' && arrivals.length) {
-    for (const member of arrivals) await observe(member);
+  let members = initial, previous = initial, stable = false;
+  // Retain first identities/tokens; snapshot and grace caps bound churn.
+  for (let snapshot = 1; snapshot < GROUP_VERIFY_SNAPSHOTS; snapshot++) {
+    previous = members;
     try { table = await processAdapter.list(); }
     catch (error) {
       for (const { member } of observations.values()) report(member, 'refused', 'final-list-failed', { error: error.code || 'PROCESS_LIST' });
       return null;
     }
+    members = table.filter(row => row.pgid === record.pgid && row.state !== 'Z');
+    const pids = new Set(previous.map(row => row.pid));
+    stable = members.length === previous.length && members.every(row => pids.has(row.pid));
+    for (const member of members) if (!observations.has(member.pid)) await observe(member);
+    if (stable || performance.now() >= deadline) break;
   }
-  const members = table.filter(row => row.pgid === record.pgid && row.state !== 'Z');
-  let refused = false;
+  const previousPids = new Set(previous.map(row => row.pid));
+  const finalPids = new Set(members.map(row => row.pid));
+  const unstable = new Set(stable ? [] : [...previousPids, ...finalPids].filter(pid => previousPids.has(pid) !== finalPids.has(pid)));
+  let refused = !stable;
   const foreign = new Map();
   for (const { member, token } of observations.values()) {
     if (token?.runToken && (token.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir))) {
       foreign.set(member.pid, token.runToken !== record.runToken ? 'foreign-token' : 'token-profile-mismatch');
       refused = true;
     }
-    if (!members.some(row => row.pid === member.pid)) report(member, foreign.has(member.pid) ? 'refused' : 'departed', foreign.get(member.pid) || 'left-group');
+    if (!finalPids.has(member.pid)) report(member, foreign.has(member.pid) ? 'refused' : 'departed', foreign.get(member.pid) || 'left-group', unstable.has(member.pid) ? { unstable: true } : {});
   }
   const byPid = new Map(table.map(row => [row.pid, row]));
   const root = members.find(row => row.pid === record.pid);
@@ -80,8 +84,9 @@ export async function verifiedGroup(record, options) {
     if (!reason && path && !samePath(path, record.userDataDir)) reason = 'inspection-profile-mismatch';
     const currentPath = profileArgument(member.argv);
     if (!reason && currentPath && !samePath(currentPath, record.userDataDir)) reason = 'final-profile-mismatch';
+    if (!reason && !stable) reason = 'group-unstable';
     if (reason) refused = true;
-    report(member, reason ? 'refused' : 'accepted', reason || (token?.runToken ? member.pid === record.pid ? 'root-token-verified' : 'helper-token-verified' : 'helper-ancestry-verified'), { phase, inspectionReason: fresh?.reason, environ: token ? 'readable' : 'unverified', tokenMatch: token?.runToken === record.runToken, profileMatch: token?.profilePath === record.userDataDir });
+    report(member, reason ? 'refused' : 'accepted', reason || (token?.runToken ? member.pid === record.pid ? 'root-token-verified' : 'helper-token-verified' : 'helper-ancestry-verified'), { phase, inspectionReason: fresh?.reason, environ: token ? 'readable' : 'unverified', tokenMatch: token?.runToken === record.runToken, profileMatch: token?.profilePath === record.userDataDir, ...(unstable.has(member.pid) ? { unstable: true } : {}) });
   }
   return refused ? null : members;
 }

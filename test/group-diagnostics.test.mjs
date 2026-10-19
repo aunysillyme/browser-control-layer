@@ -81,15 +81,14 @@ for (const [label, reason, mutate] of [
   assert.deepEqual(f.signals, []);
 });
 
-test('RED Darwin further arrivals after the bounded inspection remain unobserved', async () => {
+test('GREEN Darwin arrivals across three snapshots converge before signalling', async () => {
   const f = await fixture({ arrival: true, tokenless: true, mutate({ rows, lists }) {
     if (lists === 3) rows.set(1501, { ...rows.get(1500), pid: 1501 });
   } });
   const result = await signalOwned(f.record, { ...f, group: true });
-  assert.equal(result.sent, false);
-  assert.equal(result.group.find(row => row.pid === 1501).reason, 'member-unobserved');
-  assert.equal(f.listCount(), 3);
-  assert.deepEqual(f.signals, []);
+  assert.equal(result.sent, true);
+  assert.equal(f.listCount(), 4);
+  assert.deepEqual(f.signals, [{ pid: -1481, signal: 'SIGTERM' }]);
 });
 
 for (const [label, reason, mutate] of [

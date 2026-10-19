@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { CODES, check, contentIssues } from '../src/build/validate.mjs';
-import { digest } from '../src/build/bundle.mjs';
 
 try {
   const args = process.argv.slice(2), selected = new Set();
@@ -15,7 +14,7 @@ try {
     if ([...selected].some(c=>!['PRIVACY','PRIVACY_NAME','INTERNAL_TERMS','VOICE'].includes(c))) throw Error('--stdin supports content gates');
     const hashes=new Set(readFileSync('check/terms.private.sha256','utf8').trim().split('\n'));
     result={issues:contentIssues('<stdin>',readFileSync(0,'utf8'),hashes),warnings:[]};
-  } else result=check(process.cwd(),{release:args.includes('--release')});
+  } else result=check(process.cwd(),{release:args.includes('--release'),only:[...selected]});
   const wanted=s=>!selected.size || selected.has(s.split(':')[0]);
   const issues=result.issues.filter(wanted);
   for (const warning of result.warnings.filter(wanted)) console.error(`WARN ${warning}`);

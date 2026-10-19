@@ -4,6 +4,8 @@ import { mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, renameSync
 import { join, resolve } from 'node:path';
 import { check, contentIssues, normalize, termMatches } from '../src/build/validate.mjs';
 import { digest, files } from '../src/build/bundle.mjs';
+import { spawnSync } from 'node:child_process';
+import { linkIssues } from '../src/build/inherited.mjs';
 test('private hash detector refuses whole terms and phrases, allows substrings and public names', () => {
   const hashes=new Set([digest(normalize('example-private')),digest(normalize('sample command'))]);
   assert.equal(termMatches('EXAMPLE-private',hashes).length,1);
@@ -27,6 +29,19 @@ test('renamed tree passes NAME_PARAM and all current checks without local privat
     const path=join(root,'skills',p.name,'manifest.json'), m=JSON.parse(readFileSync(path,'utf8')); m.skillName=p.name; writeFileSync(path,JSON.stringify(m));
     const pp=join(root,'.claude-plugin/plugin.json'), plugin=JSON.parse(readFileSync(pp,'utf8')); plugin.name=p.name; writeFileSync(pp,JSON.stringify(plugin));
     assert.deepEqual(check(root).issues,[]);
+    const built=spawnSync(process.execPath,['scripts/build.mjs'],{cwd:root,encoding:'utf8'});
+    assert.equal(built.status,0,built.stderr);
     assert.ok(check(root,{release:true}).issues.some(s=>s.includes('stub remains')));
   } finally { rmSync(root,{recursive:true,force:true}); }
+});
+test('LINK validates local files and headings with a refusing case',()=>{
+  assert.deepEqual(linkIssues(process.cwd(),'README.md','[Build](AGENTS.md#build-steps)'),[]);
+  assert.ok(linkIssues(process.cwd(),'README.md','[Build](AGENTS.md#absent-heading)').some(s=>s.startsWith('LINK:')));
+  assert.ok(linkIssues(process.cwd(),'README.md','[Build](absent-file.md)').some(s=>s.startsWith('LINK:')));
+});
+test('private hash matches remain correct when the caller updates its set',()=>{
+  const hashes=new Set([digest(normalize('example-private'))]);
+  assert.equal(termMatches('second-private',hashes).length,0);
+  hashes.add(digest(normalize('second-private')));
+  assert.equal(termMatches('second-private',hashes).length,1);
 });

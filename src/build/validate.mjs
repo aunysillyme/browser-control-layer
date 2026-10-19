@@ -17,7 +17,11 @@ export const CODES = [
   'NO_THIRD_PARTY_INSTALL','HOOK_LATENCY',
 ];
 export const normalize = text => text.normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}_-]+|--/gu)?.join(' ') || '';
+const termCache = new Map();
 export function termMatches(text, hashes) {
+  if (!hashes.size) return [];
+  const key=digest(text)+digest([...hashes].sort().join('\n'));
+  if (termCache.has(key)) return [...termCache.get(key)];
   const tokens = normalize(text).split(' '), hits = new Set();
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i].startsWith('aun-')) continue;
@@ -26,15 +30,20 @@ export function termMatches(text, hashes) {
       if (hashes.has(digest(value))) hits.add(digest(value));
     }
   }
+  if (termCache.size>=512) termCache.delete(termCache.keys().next().value);
+  termCache.set(key,[...hits]);
   return [...hits];
 }
 export function contentIssues(name, text, hashes = new Set()) {
   const issues = [], add = code => issues.push(`${code}:${name}`);
   const privatePattern = new RegExp(['(?:/' + 'Users/|/' + 'home/)[^/\\s]+/', '[A-Z]:\\\\Users\\\\[^\\\\]+\\\\', '\\b' + ['A','UN'].join('') + '-\\d+', 'linear\\.app/'].join('|'), 'i');
-  if (privatePattern.test(text) || /(?:Bearer\s+[A-Za-z0-9_.-]{16,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:sk|ghp)_[A-Za-z0-9]{16,})/.test(text)) add('PRIVACY');
-  if (privatePattern.test(name)) add('PRIVACY_NAME');
+  const homePath = new RegExp('(?:~|\\$HOME|%USERPROFILE%)[/\\\\](?:Claude Code|Vau' + 'lts)(?:[/\\\\]|$)', 'i');
+  const email = /[A-Z0-9._%+-]+@(?:gmail|outlook|hotmail|icloud|yahoo)\.[A-Z]{2,}/i;
+  const privateText = privatePattern.test(text) || homePath.test(text) || email.test(text);
+  if (privateText || /(?:Bearer\s+[A-Za-z0-9_.-]{16,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:sk|ghp)_[A-Za-z0-9]{16,})/.test(text)) add('PRIVACY');
+  if (privatePattern.test(name) || homePath.test(name) || termMatches(name,hashes).length) add('PRIVACY_NAME');
   if (text.includes(String.fromCharCode(0x2014)) || text.toLowerCase().includes(['bottle','neck'].join(''))) add('VOICE');
-  if (termMatches(name+'\n'+text, hashes).length) add('INTERNAL_TERMS');
+  if (termMatches(name+'\n'+text, hashes).length) { add('INTERNAL_TERMS'); add('PRIVACY'); }
   if (name.endsWith('.md') && /^#{1,6}\s+(?:Without\b|No\s|Not\s|Limits\b|Limitations\b|What it is not\b|Not supported\b|Missing\b|Unsupported\b)/im.test(text)) add('ABSENCE_HEADING');
   if (name.startsWith('src/') && /(?:Input\.dispatch|Runtime\.evaluate|Page\.navigate)/.test(text)) add('NO_DRIVER');
   if ((name.startsWith('src/install/') || name.startsWith('bench/')) && /(?:exec|spawn|run)\w*\s*\([^\n]*(?:npm['"]?\s*,?\s*['"]?install|\bnpx\b|\bpip(?:3)?\b|\bbrew\b)/i.test(text)) add('NO_THIRD_PARTY_INSTALL');
@@ -52,7 +61,9 @@ export function proofIssues(rows, now = Date.now()) {
   return { issues, warnings };
 }
 export function check(root, options = {}) {
-  const issues = [], warnings = [], names = files(root), { pkg, core, manifest } = config(root);
+  const issues = [], warnings = [], names = files(root);
+  const selected = new Set(options.only || []);
+  const wanted = code => !selected.size || selected.has(code);
   const add = (code, detail) => issues.push(`${code}:${detail}`);
   const protect = (code, fn) => { try { fn(); } catch (e) { add(code,e.message); } };
   const hashText = read(root, 'check/terms.private.sha256').trim();
@@ -72,6 +83,9 @@ export function check(root, options = {}) {
     if (/^\.github\/workflows\/.*\.ya?ml$/.test(name)) issues.push(...workflowIssues(name,text));
     if (options.release && text.includes(STUB)) add('FLOOR',`${name}:stub remains`);
   }
+  const contentCodes = new Set(['PRIVACY','PRIVACY_NAME','VOICE','LINK','INTERNAL_TERMS','ABSENCE_HEADING','SCOPE_V1','NO_DRIVER','NO_THIRD_PARTY_INSTALL',...CODES.filter(c=>c.startsWith('WORKFLOW_') || c.startsWith('ACTION_'))]);
+  if (selected.size && [...selected].every(c=>contentCodes.has(c))) return {issues:[...new Set(issues)].filter(s=>wanted(s.split(':')[0])),warnings};
+  const { pkg, core, manifest } = config(root);
   protect('FLOOR',() => {
     for (const path of ['LICENSE','CLA.md','CONTRIBUTING.md','CODE_OF_CONDUCT.md','SECURITY.md','MAINTAINERS.md','RELEASING.md','REPO_SETTINGS.md','README.md','AGENTS.md','CREDITS.md','hooks/hooks.json','agents/aun-runner-browser.md',`${core}/SKILL.md`,'.claude-plugin/plugin.json','.claude-plugin/marketplace.json']) if (!read(root,path).trim()) add('FLOOR',path);
   });
@@ -97,6 +111,7 @@ export function check(root, options = {}) {
     const allow = pkg.files.map(p=>p.replace(/\/$/,''));
     for (const p of ['bin','src','skills','adapters','hooks','agents','bench','evals','docs','.claude-plugin','README.md','LICENSE']) if (!allow.includes(p)) add('PACKAGE_FILES',p);
     if (allow.some(p=>p.startsWith('!') && p !== '!docs/*.gif')) add('PACKAGE_FILES','unexpected exclusion');
+    if (allow.includes('!docs/*.gif') && allow.indexOf('!docs/*.gif')<allow.indexOf('docs')) add('PACKAGE_FILES','exclusion precedes docs');
     const workflow = JSON.parse(read(root,'.github/workflows/check.yml'));
     if (!workflow.jobs.checks.strategy.matrix.node.some(n=>String(n)==='22') || !workflow.jobs.checks.steps.some(s=>s.with?.['node-version']==='${{ matrix.node }}')) add('PACKAGE_HONESTY','engine floor lacks check matrix');
     const plugin = JSON.parse(read(root,'.claude-plugin/plugin.json'));
@@ -138,7 +153,7 @@ export function check(root, options = {}) {
       }
       if (name!=='docs/DEFAULTS.md') {
         const outside = text.replace(/<!-- proof:start[^>]*-->[\s\S]*?<!-- proof:end -->/g,'');
-        if (/\b\d+(?:\.\d+)?\s*(?:%|times faster|tokens saved|MB saved)\b/.test(outside)) add('PROOF_BINDING',name);
+        if (/\b\d+(?:\.\d+)?\s*(?:%|times faster\b|tokens saved\b|MB saved\b)/i.test(outside)) add('PROOF_BINDING',name);
       }
     }
     if (!rows.length) warnings.push('PROOF_EXPIRY:proof rows await browser CI');
@@ -147,13 +162,25 @@ export function check(root, options = {}) {
     const path='src/hygiene/defaults.json';
     if (!existsSync(join(root,path))) { warnings.push('DEFAULT_ROW:defaults await hygiene implementation'); return; }
     const data=JSON.parse(read(root,path));
-    for (const [key,row] of Object.entries(data)) if (row.value != null && (!row.source || !row.date)) add('DEFAULT_ROW',key);
+    for (const [key,row] of Object.entries(data)) if (row.value != null) {
+      if (!row.source || !Number.isFinite(Date.parse(row.date || ''))) add('DEFAULT_ROW',key);
+      const doc=read(root,'docs/DEFAULTS.md');
+      const citation=typeof row.source==='string' ? row.source : row.source?.url;
+      if (!citation || (!doc.startsWith(STUB) && (!doc.includes(key) || !doc.includes(citation)))) add('DEFAULT_ROW',`${key}:documentation binding`);
+    }
   });
   protect('CLAIM_RUNNERS',() => {
     const plugin=JSON.parse(read(root,'.claude-plugin/plugin.json'));
     for (const runner of plugin.agents || []) if (!existsSync(join(root,runner))) add('CLAIM_RUNNERS',runner);
     const hooks=JSON.parse(read(root,'hooks/hooks.json'));
     if (!hooks.hooks || typeof hooks.hooks!=='object') add('CLAIM_RUNNERS','hook registry');
+    for (const events of Object.values(hooks.hooks || {})) for (const entry of events) for (const hook of entry.hooks || []) {
+      for (const m of (hook.command || '').matchAll(/\$\{CLAUDE_PLUGIN_ROOT\}\/([^\s"']+)/g)) if (!existsSync(join(root,m[1]))) add('CLAIM_RUNNERS',m[1]);
+    }
+    for (const name of names.filter(n=>n==='README.md' || n===`${core}/SKILL.md` || n.startsWith('adapters/'))) {
+      const text=read(root,name); if (text.startsWith(STUB)) continue;
+      for (const m of text.matchAll(/`((?:agents|src\/hooks)\/[^`]+)`/g)) if (!existsSync(join(root,m[1]))) add('CLAIM_RUNNERS',`${name}:${m[1]}`);
+    }
   });
   protect('CONCEPT_MAP',() => {
     const provenance=read(root,'docs/PROVENANCE.md');
@@ -163,9 +190,10 @@ export function check(root, options = {}) {
     for (const line of rows) {
       const cells=line.split('|').slice(1,-1).map(s=>s.trim());
       if (cells.length<4 || !cells[2] || !cells[3]) { add('CONCEPT_MAP','incomplete row'); continue; }
-      if (/\bours\b/i.test(cells[1]) && !/aun-[a-z-]+/.test(cells[1])) add('CONCEPT_MAP','public concept name');
+      if (!/aun-[a-z-]+|[\w.-]+\/[\w.-]+|https:\/\/|Agents SDK|Browser Run|Playwright MCP/.test(cells[1])) add('CONCEPT_MAP','public concept name');
       const paths=[...cells[2].matchAll(/`([^`]+)`/g)].map(m=>m[1]);
       if (!paths.length || paths.some(p=>!existsSync(join(root,p)) && !existsSync(join(root,core,p)))) add('CONCEPT_MAP','reference missing');
+      if (!/`[^`]+`|\b(?:template|hook|runner rule|brief field|report template|profile classes)\b/i.test(cells[3])) add('CONCEPT_MAP','usable artifact missing');
     }
   });
   protect('NAME_PARAM',() => { for (const name of names.filter(n=>n.startsWith('src/') && n!=='src/config.mjs')) if (read(root,name).includes(pkg.name) || read(root,name).includes(core)) add('NAME_PARAM',name); });
@@ -177,7 +205,10 @@ export function check(root, options = {}) {
   });
   protect('LICENSE_SOURCE',() => {
     const path='docs/evidence/sources.json';
-    if (!existsSync(join(root,path))) { warnings.push('LICENSE_SOURCE:source ledger awaits prose'); return; }
+    if (!existsSync(join(root,path))) {
+      if (!read(root,'docs/PROVENANCE.md').startsWith(STUB)) { add('LICENSE_SOURCE','source ledger required'); add('CREDITS','source ledger required'); }
+      else warnings.push('LICENSE_SOURCE:source ledger awaits prose'); return;
+    }
     const sources=JSON.parse(read(root,path));
     for (const source of sources) {
       if (!(source.kind==='docs' ? ['MIT','Apache-2.0','BSD-2-Clause','BSD-3-Clause','CC-BY-4.0'] : ['MIT','Apache-2.0','BSD-2-Clause','BSD-3-Clause']).includes(source.license)) add('LICENSE_SOURCE',source.url);
@@ -194,7 +225,20 @@ export function check(root, options = {}) {
     }
     const ledger=JSON.parse(read(root,p));
     for (const path of candidates) if (!ledger.files?.[path]) add('CLAIM_EVIDENCE',`${path}:review entry required`);
-    for (const [path,entry] of Object.entries(ledger.files || {})) if (digest(read(root,path))!==entry.sha256 || !['PASS','WAIVED','instructions-and-qualified-status-only'].includes(entry.disposition)) add('CLAIM_EVIDENCE',path);
+    for (const [path,entry] of Object.entries(ledger.files || {})) {
+      if (digest(read(root,path))!==entry.sha256 || !['PASS','WAIVED','instructions-and-qualified-status-only'].includes(entry.disposition)) add('CLAIM_EVIDENCE',path);
+      if (entry.disposition==='WAIVED' && !entry.reason) add('CLAIM_EVIDENCE',`${path}:waiver needs reason`);
+      if (entry.disposition==='PASS') {
+        if (!entry.claims?.length) add('CLAIM_EVIDENCE',`${path}:claims required`);
+        for (const claim of entry.claims || []) {
+          try {
+            if (!claim.text || !read(root,path).includes(claim.text) || !claim.evidence?.startsWith('docs/evidence/')) throw Error('unbound claim');
+            const receipt=JSON.parse(read(root,claim.evidence));
+            if (!receipt.command || !receipt.environment || !receipt.date || receipt.exitCode!==0 || !receipt.artifactSha256 || !receipt.observed) throw Error('incomplete receipt');
+          } catch { add('CLAIM_EVIDENCE',`${path}:receipt required`); }
+        }
+      }
+    }
   });
   protect('HOOK_LATENCY',() => {
     const rows=JSON.parse(read(root,'proof/results.json')).filter(r=>r.id==='H5');
@@ -203,5 +247,5 @@ export function check(root, options = {}) {
   });
   const readme=read(root,'README.md');
   if (fenced(readme).some(body=>body.split('\n').length>8)) add('FLOOR','front-page fence budget');
-  return { issues:[...new Set(issues)], warnings:[...new Set(warnings)] };
+  return { issues:[...new Set(issues)].filter(s=>wanted(s.split(':')[0])), warnings:[...new Set(warnings)].filter(s=>wanted(s.split(':')[0])) };
 }

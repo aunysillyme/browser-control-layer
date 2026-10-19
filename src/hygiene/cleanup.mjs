@@ -1,6 +1,8 @@
 import { basename, dirname, join } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { inspect, owns, leaseProof, verifyProfilePath } from '../proc/owns.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { inspect, owns, leaseProof, verifyProfilePath, daemonProof } from '../proc/owns.mjs';
 import { signalOwned, signalLeasedSurvivors, verifiedGroup } from '../proc/signals.mjs';
 import { processTable } from '../proc/table.mjs';
 import { PROFILE, isUserProfile, samePath } from './profiles.mjs';
@@ -44,11 +46,36 @@ async function eligible(record, options, table) {
     const rows = table.rows.filter(row => record.kind === 'leased' ? row.pgid === record.pgid : row.pid === record.pid);
     return budgetStatus(rows, record.budgets, record.cpuHistory, atTime(now)).exceeded;
   }
-  const ownerPid = record.kind === 'recipe' ? record.parentPid : record.hostPid;
-  const ownerStart = record.kind === 'recipe' ? record.parentStartTime : record.hostStartTime;
+  // A daemon recipe's owner is the AI host, because its daemon may live on after the host is gone.
+  const byParent = record.kind === 'recipe' && !record.daemon;
+  const ownerPid = byParent ? record.parentPid : record.hostPid;
+  const ownerStart = byParent ? record.parentStartTime : record.hostStartTime;
   if (!Number.isInteger(ownerPid)) return false;
   const host = await inspect(options.processAdapter, ownerPid);
   return !host || (host.readable && ownerStart != null && String(host.startTime) !== String(ownerStart));
+}
+
+const execute = promisify(execFile);
+
+// After the browser root has had its SIGTERM, the driver's own close ends the session it holds.
+// The daemon must still be the recorded one with the stamped session; anything else is left alone.
+async function closeDaemonSession(record, proof, options) {
+  const rule = proof.recipe?.daemon;
+  const daemon = rule && await inspect(options.processAdapter, record.daemon.pid);
+  if (!daemon) return { ran: false, reason: 'daemon-gone' };
+  const check = await daemonProof(record, proof.recipe, daemon, options.processAdapter);
+  if (!check.ok) return { ran: false, reason: check.reason };
+  const env = { PATH: process.env.PATH, HOME: process.env.HOME, [rule.sessionEnv]: record.daemon.session, ...Object.fromEntries(rule.passEnv.filter(name => check.env[name]).map(name => [name, check.env[name]])) };
+  let code = 0;
+  try { await (options.runDriverClose || execute)(daemon.executable, rule.closeArgs(record.daemon.session), { env, timeout: 10000 }); }
+  catch (error) { code = error.code ?? 1; }
+  let gone = false;
+  for (let attempt = 0; attempt < 30 && !gone; attempt++) {
+    const still = await inspect(options.processAdapter, daemon.pid);
+    gone = !still || String(still.startTime) !== String(daemon.startTime);
+    if (!gone) await (options.sleep || sleep)(100);
+  }
+  return { ran: true, code, daemonGone: gone };
 }
 
 export async function cleanup(input) {
@@ -82,6 +109,7 @@ export async function cleanup(input) {
       action.signal = await signalOwned(record, { ...options, group: record.kind === 'leased', signal: 'SIGTERM' });
       const grace = options.termGraceMs ?? defaults.termGraceMs.value;
       if (action.signal.sent && Number.isFinite(grace) && grace >= 0) await (options.sleep || sleep)(grace);
+      if (record.daemon) action.driverClose = await closeDaemonSession(record, proof, options);
       const after = await inspect(processAdapter, record.pid);
       if (after && record.kind === 'leased' && Number.isFinite(grace) && grace >= 0) action.escalation = await signalOwned(record, { ...options, group: true, signal: 'SIGKILL' });
     } else if (proof.gone && record.kind === 'leased') action.survivors = await signalLeasedSurvivors(record, options);

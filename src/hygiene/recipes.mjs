@@ -8,8 +8,13 @@ const profilePatterns = {
   'chrome-devtools-mcp': /(?:^|\/)chrome-devtools-mcp\/(?:chrome-profile|chrome-profile-stable)$/,
   'agent-browser': /(?:^|\/)(?:playwright_chromiumdev_profile-[^/]+|agent-browser-[^/]+)$/
 };
+// agent-browser keeps its browser under a native daemon that outlives the AI host, so ancestry cannot reach the host.
+// Its browser is owned only when that daemon's own AGENT_BROWSER_SESSION equals a session name the host stamped.
+const daemons = {
+  'agent-browser': { executable: name => /^agent-browser-/.test(name), sessionEnv: 'AGENT_BROWSER_SESSION', passEnv: ['AGENT_BROWSER_SOCKET_DIR', 'AGENT_BROWSER_NAMESPACE'], closeArgs: session => ['--session', session, 'close'] }
+};
 export const RECIPES = Object.freeze(catalog.drivers.map(driver => ({
-  id: driver.id, version: driver.version,
+  id: driver.id, version: driver.version, daemon: daemons[driver.id],
   executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium', 'chrome-headless-shell'],
   automationFlags: [driver.id === 'agent-browser' ? '--remote-debugging-port=0' : '--remote-debugging-pipe'],
   profileClass: driver.variants[0].profileClass,

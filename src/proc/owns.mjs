@@ -1,3 +1,4 @@
+import { basename } from 'node:path';
 import { isUserProfile, samePath, profileArgument, PROFILE, isWithin } from '../hygiene/profiles.mjs';
 import { matchRecipe } from '../hygiene/recipes.mjs';
 
@@ -28,6 +29,17 @@ export async function leaseProof(record, { ledger, profileOptions = {} }) {
   } catch { return false; }
 }
 
+// A missing environment, a different session or a replaced daemon proves nothing, so none of them authorizes a signal or a close.
+export async function daemonProof(record, recipe, daemon, adapter) {
+  const rule = recipe?.daemon, saved = record.daemon;
+  if (!rule || !saved || saved.pid !== record.parentPid || saved.pid !== daemon?.pid || !daemon.readable || String(saved.startTime) !== String(daemon.startTime) || daemon.executable !== saved.executable || !rule.executable(basename(daemon.executable || ''))) return { ok: false, reason: 'daemon-unverified' };
+  let env;
+  try { env = await adapter.inspectEnv?.(daemon.pid, [rule.sessionEnv, ...rule.passEnv]); } catch { env = null; }
+  if (!env?.[rule.sessionEnv]) return { ok: false, reason: 'session-unverified' };
+  if (env[rule.sessionEnv] !== saved.session) return { ok: false, reason: 'session-mismatch' };
+  return { ok: true, env };
+}
+
 export async function owns(record, { processAdapter, ledger, now = Date.now, idleSeconds, mode = 'orphans', recipes, versions, profileOptions = {} }) {
   const current = await inspect(processAdapter, record.pid);
   if (!current) return { owned: false, gone: true, reason: 'process-gone' };
@@ -47,6 +59,18 @@ export async function owns(record, { processAdapter, ledger, now = Date.now, idl
   if (!recipe || record.driverId !== recipe.id || record.driverVersion !== recipe.version || record.profileClass !== recipe.profileClass) return { owned: false, reason: 'recipe-unverified' };
   const parent = await inspect(processAdapter, record.parentPid);
   if (parent && (!parent.readable || String(parent.startTime) !== String(record.parentStartTime))) return { owned: false, reason: 'parent-unverified' };
+  // Daemon recipes (agent-browser): the browser's parent is a daemon that may outlive the AI host.
+  // Owned only while the daemon is the recorded one AND its own environment still names the stamped session.
+  // "Owner gone" means the AI host is gone; a live host leaves the browser alone (owner-active below).
+  if (record.daemon && parent) {
+    const proof = await daemonProof(record, recipe, parent, processAdapter);
+    if (!proof.ok) return { owned: false, reason: proof.reason };
+    if (mode === 'orphans' && current.ppid === record.parentPid) {
+      const host = await inspect(processAdapter, record.hostPid);
+      const hostGone = !host || (host.readable && record.hostStartTime != null && String(host.startTime) !== String(record.hostStartTime));
+      if (hostGone) return { owned: true, class: 'daemon-orphan', current, recipe, profileClass: recipe.profileClass, path: observedPath };
+    }
+  }
   // Reparenting to init after the recorded launching parent exits is expected.
   if (!parent && (current.ppid === record.parentPid || current.ppid === 1)) return { owned: true, class: 'recipe-orphan', current, recipe, profileClass: recipe.profileClass, path: observedPath };
   if (current.ppid !== record.parentPid) return { owned: false, reason: 'parent-changed' };

@@ -40,5 +40,11 @@ export function darwinAdapter({ run = exec, signal = process.kill.bind(process) 
       const profilePath = stdout.match(/(?:^|\s)AUN_PROFILE_DIR=(.*?)(?=\s[A-Za-z_][A-Za-z0-9_]*=|$)/)?.[1]?.trim();
       return runToken && profilePath ? { runToken, profilePath } : null;
     } catch { return null; }
+  }, async inspectEnv(pid, names) {
+    if (!Number.isInteger(pid) || pid <= 0) return null;
+    try {
+      const { stdout } = await run('/bin/ps', ['eww', '-p', String(pid), '-o', 'command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
+      return Object.fromEntries(names.map(name => [name, stdout.match(new RegExp(`(?:^|\\s)${name}=(.*?)(?=\\s[A-Za-z_][A-Za-z0-9_]*=|$)`))?.[1]?.trim()]).filter(([, value]) => value));
+    } catch { return null; }
   }, signal };
 }

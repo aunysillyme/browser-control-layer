@@ -42,7 +42,14 @@ export function linuxAdapter({ fs = { readFile, readdir, readlink }, procRoot = 
       return { runToken: value('AUN_RUN_TOKEN'), profilePath: value('AUN_PROFILE_DIR') };
     } catch { return null; }
   }
-  return { platform: 'linux', inspect, inspectToken, signal, async list() {
+  // Returns only the named variables. Chrome helpers are non-dumpable, so a refusal returns null and never authorizes anything.
+  async function inspectEnv(pid, names) {
+    try {
+      const entries = (await fs.readFile(`${procRoot}/${pid}/environ`, 'utf8')).split('\0');
+      return Object.fromEntries(names.map(name => [name, entries.find(item => item.startsWith(`${name}=`))?.slice(name.length + 1)]).filter(([, value]) => value !== undefined));
+    } catch { return null; }
+  }
+  return { platform: 'linux', inspect, inspectToken, inspectEnv, signal, async list() {
     const rows = (await Promise.all((await fs.readdir(procRoot)).filter(name => /^\d+$/.test(name)).map(name => inspect(Number(name))))).filter(Boolean);
     const live = new Set(rows.map(row => row.pid)); for (const pid of samples.keys()) if (!live.has(pid)) samples.delete(pid);
     return rows;

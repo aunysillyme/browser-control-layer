@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { attribute } from '../proc/ancestry.mjs';
+import { attribute, attributeDaemon } from '../proc/ancestry.mjs';
 import { inspect } from '../proc/owns.mjs';
 import { createLedger, stampActivity } from './ledger.mjs';
 import { processAdapter as makeAdapter } from '../proc/table.mjs';
@@ -23,11 +23,11 @@ export async function discoverRuns(options) {
     if (!recipe) continue;
     const userDataDir = profileArgument(row.argv);
     if (isUserProfile(userDataDir, profileOptions)) continue;
-    const stamp = attribute(row, table.rows, stamps, recipes);
+    const stamp = attribute(row, table.rows, stamps, recipes) || await attributeDaemon(row, table.rows, stamps, recipe, processAdapter);
     const parent = table.rows.find(item => item.pid === row.ppid);
     if (!stamp || !parent?.readable) continue;
     const id = createHash('sha256').update(`${sessionKey}:${row.pid}:${row.startTime}`).digest('hex');
-    const record = { ...row, id, kind: 'recipe', sessionKey, hostPid: stamp.hostPid, hostStartTime: stamp.hostStartTime, driverId: recipe.id, driverVersion: recipe.version, parentPid: parent.pid, parentStartTime: parent.startTime, userDataDir, profileClass: recipe.profileClass, lastActivity: stamp.lastActivity, tabsCreated: [], remoteSessionIds: [], budgets: {} };
+    const record = { ...row, id, kind: 'recipe', sessionKey, hostPid: stamp.hostPid, hostStartTime: stamp.hostStartTime, driverId: recipe.id, driverVersion: recipe.version, parentPid: parent.pid, parentStartTime: parent.startTime, userDataDir, profileClass: recipe.profileClass, ...(stamp.driver ? { daemon: stamp.driver } : {}), lastActivity: stamp.lastActivity, tabsCreated: [], remoteSessionIds: [], budgets: {} };
     await ledger.write(record);
     discovered.push(record);
   }

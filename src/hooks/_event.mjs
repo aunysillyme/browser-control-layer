@@ -59,7 +59,10 @@ export function browserTool(event, catalog = drivers.drivers) {
       if (/^--(?:session|profile|cdp|browser|channel|user-data-dir|userDataDir|headers|executable-path)$/.test(words[index])) { index++; continue; }
       if (!words[index].startsWith('-')) { action = words[index]; break; }
     }
-    return driver ? { driverId: driver.id, action, args: words, valid: Boolean(words), transport: 'cli' } : null;
+    // The driver session the command names; a daemon-hosted browser is attributed through it.
+    const flag = (words || []).findIndex(word => word === '--session' || word.startsWith('--session='));
+    const session = flag < 0 ? undefined : words[flag].startsWith('--session=') ? words[flag].slice(10) : words[flag + 1];
+    return driver ? { driverId: driver.id, action, args: words, valid: Boolean(words), transport: 'cli', ...(session ? { session } : {}) } : null;
   }
   const match = /^mcp__([^_]+(?:_[^_]+)*)__([\w-]+)$/.exec(event.tool);
   if (!match) return null;

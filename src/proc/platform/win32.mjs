@@ -20,5 +20,5 @@ export function win32Adapter({ inventory, run = exec } = {}) {
     const { stdout } = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, windowsHide: true });
     return parseWindowsInventory(stdout);
   });
-  return { platform: 'win32', list, async inspect(pid) { return (await list()).find(row => row.pid === pid) || null; }, async inspectToken() { return null; }, signal() { throw new Error('PLATFORM_UNVERIFIED: process control requires a verified adapter'); } };
+  return { platform: 'win32', list, async inspect(pid) { return (await list()).find(row => row.pid === pid) || null; }, async inspectToken() { return null; }, async inspectEnv() { return null; }, signal() { throw new Error('PLATFORM_UNVERIFIED: process control requires a verified adapter'); } };
 }

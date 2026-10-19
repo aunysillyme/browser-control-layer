@@ -116,13 +116,13 @@ export function createLedger({ root = stateRoot(), fs = nativeFs, now = Date.now
   return { root, fs, now, initialize, list, read, write, update, remove, withLock, readSession, updateSession, createRunDirectory, writeOwner, readOwner, safeDirectory, safeFile };
 }
 
-export async function stampActivity({ ledger, sessionKey, hostPid, hostStartTime, driverId, driverVersion, processAdapter, now = Date.now }) {
+export async function stampActivity({ ledger, sessionKey, hostPid, hostStartTime, driverId, driverVersion, driverSession, processAdapter, now = Date.now }) {
   if (processAdapter) {
     const { cancelIdleTimer } = await import('./idle-timer.mjs');
     await cancelIdleTimer({ ledger, sessionKey, processAdapter });
   }
   const at = typeof now === 'function' ? now() : now;
-  await ledger.updateSession(sessionKey, old => ({ ...old, sessionKey, lastActivity: at, generation: (old?.generation || 0) + 1, stamps: { ...old?.stamps, [`${hostPid}:${driverId}`]: { hostPid, hostStartTime, driverId, driverVersion, lastActivity: at } } }));
+  await ledger.updateSession(sessionKey, old => ({ ...old, sessionKey, lastActivity: at, generation: (old?.generation || 0) + 1, stamps: { ...old?.stamps, [`${hostPid}:${driverId}`]: { hostPid, hostStartTime, driverId, driverVersion, ...(driverSession || old?.stamps?.[`${hostPid}:${driverId}`]?.driverSessions ? { driverSessions: [...new Set([...(old?.stamps?.[`${hostPid}:${driverId}`]?.driverSessions || []), ...(driverSession ? [driverSession] : [])])] } : {}), lastActivity: at } } }));
   for (const record of await ledger.list()) if (record.sessionKey === sessionKey && record.hostPid === hostPid && record.driverId === driverId && String(record.hostStartTime) === String(hostStartTime)) await ledger.update(record.id, old => ({ ...old, lastActivity: at, leaseRenewedAt: old.kind === 'leased' ? at : old.leaseRenewedAt }));
   return at;
 }

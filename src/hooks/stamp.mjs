@@ -26,7 +26,9 @@ export async function stamp(event, tool, options) {
   if (!tool) return { stamped: false };
   const host = await hostIdentity(event, options);
   if (!host) return { stamped: false, reason: 'UNVERIFIED: host process identity' };
-  await (options.stampActivity || stampActivity)({ ...options, sessionKey: event.sessionKey, hostPid: host.pid, hostStartTime: host.startTime, driverId: tool.driverId, driverVersion: options.versions?.[tool.driverId] || (RECIPES.find(recipe => recipe.id === tool.driverId)?.version === (options.env || process.env).AUN_DRIVER_VERSION ? (options.env || process.env).AUN_DRIVER_VERSION : undefined) });
+  const recipe = RECIPES.find(item => item.id === tool.driverId);
+  const driverSession = recipe?.daemon ? tool.session || (options.env || process.env)[recipe.daemon.sessionEnv] || undefined : undefined;
+  await (options.stampActivity || stampActivity)({ ...options, sessionKey: event.sessionKey, hostPid: host.pid, hostStartTime: host.startTime, driverId: tool.driverId, driverSession, driverVersion: options.versions?.[tool.driverId] || (RECIPES.find(recipe => recipe.id === tool.driverId)?.version === (options.env || process.env).AUN_DRIVER_VERSION ? (options.env || process.env).AUN_DRIVER_VERSION : undefined) });
   await options.ledger.updateSession(event.sessionKey, old => ({ ...old, hooks: { ...old?.hooks, closeBlocked: false } }));
   const discovery = await (options.discoverRuns || discoverRuns)({ ...options, sessionKey: event.sessionKey, allowRemote: false });
   return { stamped: true, hostPid: host.pid, driverId: tool.driverId, discovery };

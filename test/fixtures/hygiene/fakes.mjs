@@ -61,11 +61,13 @@ export function fakeFs() {
 export function fakeProcess(rows = []) {
   const state = new Map(rows.map(row => [row.pid, { ...row }]));
   const tokens = new Map();
+  const env = new Map();
   const signals = [];
-  const adapter = { platform: 'linux', state, tokens, signals, keepAlive: false,
+  const adapter = { platform: 'linux', state, tokens, env, signals, keepAlive: false,
     async list() { return [...state.values()].map(row => ({ ...row })); },
     async inspect(pid) { return state.has(pid) ? { ...state.get(pid) } : null; },
     async inspectToken(pid) { return tokens.get(pid) || null; },
+    async inspectEnv(pid, names) { const values = env.get(pid); return values ? Object.fromEntries(names.filter(name => values[name] !== undefined).map(name => [name, values[name]])) : null; },
     async signal(pid, signal) {
       signals.push({ pid, signal });
       if (adapter.keepAlive) return;

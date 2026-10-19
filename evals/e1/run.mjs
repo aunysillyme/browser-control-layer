@@ -80,7 +80,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         const driver=catalog.drivers.find(row=>row.id===item.driver),variant=driver.variants[0];
         try {handle.p0=await runtime.start({driver,variant,repeat:item.repeat,url:fixture.url+'/list'});} catch(error) {handle.p0=error.handle;throw error;}
         const owner=await adapter.inspect(handle.p0.owner.pid);
-        await stampActivity({...base,sessionKey:session,hostPid:owner.pid,hostStartTime:owner.startTime,driverId:driver.id,driverVersion:driver.version});
+        await stampActivity({...base,sessionKey:session,hostPid:owner.pid,hostStartTime:owner.startTime,driverId:driver.id,driverVersion:driver.version,driverSession:handle.p0.token});
         const discovery=await discoverRuns({...base,sessionKey:session});
         const table=await adapter.list(),seen=table.filter(row=>/chrom/i.test(row.executable||'')&&row.argv?.some(arg=>arg.startsWith('--user-data-dir'))).map(row=>({pid:row.pid,flags:row.argv.filter(arg=>/^--(remote-debugging|user-data-dir)/.test(arg)),chain:ancestors(row.pid,table).rows.slice(0,5).map(up=>({pid:up.pid,startTime:up.startTime,exe:basename(up.executable||''),args:(up.argv||[]).slice(1,3).map(arg=>arg.slice(-70))}))}));
         for(const row of seen)for(const up of row.chain)if(/agent-browser/.test(up.exe))up.environ=await readFile(`/proc/${up.pid}/environ`,'utf8').then(text=>text.split('\0').filter(entry=>/^AGENT_BROWSER_/.test(entry)).map(entry=>entry.split('=')[0]+(entry.startsWith('AGENT_BROWSER_SESSION=')?`:${entry.slice(22)===handle.p0?.token?'equals-run-token':'other'}`:'')),error=>error.code);
@@ -115,7 +115,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
   }
   async function observe(handle,item) {
     const record=await ledger.read(handle.record.id);
-    const owned=await settledRows(adapter,table=>table.filter(row=>row.pid===record.pid||record.kind==='leased'&&row.pgid===record.pgid||row.argv?.some(arg=>arg.includes(record.userDataDir))),{wait});
+    const owned=await settledRows(adapter,table=>table.filter(row=>row.pid===record.pid||row.pid===record.daemon?.pid||record.kind==='leased'&&row.pgid===record.pgid||row.argv?.some(arg=>arg.includes(record.userDataDir))),{wait});
     const profilePresent=await access(record.userDataDir).then(()=>true,()=>false);
     const sentinelAlive=Boolean(await adapter.inspect(sentinel.process().pid));
     const pages=await sentinel.pages();

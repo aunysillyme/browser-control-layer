@@ -37,6 +37,10 @@ Use aun-cleanup to inspect browser resources, close the resources the ledger pro
 
 See [SECURITY-MODEL.md](SECURITY-MODEL.md) and [DRIVERS.md](DRIVERS.md). The ownership check runs again immediately before a browser signal; unreadable state is a reason to report, never permission to signal.
 
+On macOS, [darwin.mjs](../src/proc/platform/darwin.mjs) reads the process table with `ps` and requests environments with explicit `-Eww`. Each environment response must contain exactly the requested PID. The root's token, exact profile path, process group and saved start identity must agree with its owner file. Helpers with unreadable environments qualify only through ancestry to that token-verified root; a conflicting token refuses the group. Linux uses its existing `/proc` adapter.
+
+Run `node --test test/darwin.test.mjs` to verify this boundary with fake process and filesystem adapters, including application paths with spaces, helper ancestry, environment refusal, PID reuse and a surviving sentinel. Real browser lifecycle and wrong-kill verification run through `browser.yml` in CI. No separate watcher monitors this adapter.
+
 ## Activity and triggers
 
 The ledger stores run identity, profile class, host and parent identity, driver version, last activity, optional budgets, tabs and remote session ids. Its root follows the platform state location: `$XDG_STATE_HOME/browser-control-layer` or `~/.local/state/browser-control-layer` on Linux, `~/Library/Application Support/browser-control-layer` on macOS, and `%LOCALAPPDATA%/browser-control-layer` on Windows. [ledger.mjs](../src/hygiene/ledger.mjs) validates owner-only state directories and files, rejects symlinks and uses locked atomic updates.

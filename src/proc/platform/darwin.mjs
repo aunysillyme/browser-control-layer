@@ -24,6 +24,18 @@ export function parseProcessTable(text) {
 }
 
 export function darwinAdapter({ run = exec, signal = process.kill.bind(process) } = {}) {
+  async function environment(pid, names) {
+    if (!Number.isInteger(pid) || pid <= 0) return null;
+    try {
+      // -E requests the environment in both ps modes; -e selects all processes
+      // in modern mode. Bind the single response to the requested PID.
+      const { stdout } = await run('/bin/ps', ['-Eww', '-p', String(pid), '-o', 'pid=,command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
+      const rows = stdout.split('\n').filter(line => line.trim());
+      const row = rows.length === 1 && rows[0].match(/^\s*(\d+)\s+(.*)$/);
+      if (!row || Number(row[1]) !== pid) return null;
+      return Object.fromEntries(names.map(name => [name, row[2].match(new RegExp(`(?:^|\\s)${name}=(.*?)(?=\\s[A-Za-z_][A-Za-z0-9_]*=|$)`))?.[1]?.trim()]).filter(([, value]) => value));
+    } catch { return null; }
+  }
   async function list() {
     const result = await run('/bin/ps', ['-Aww', '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
     return parseProcessTable(result.stdout);
@@ -33,18 +45,7 @@ export function darwinAdapter({ run = exec, signal = process.kill.bind(process) 
     try { const result = await run('/bin/ps', ['-ww', '-p', String(pid), '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,command='], { timeout: 1500, maxBuffer: 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } }); return parseProcessTable(result.stdout)[0] || null; }
     catch (error) { if (error.code === 1 && !error.stdout?.trim()) return null; return { pid, readable: false, reason: 'PROCESS_INSPECT' }; }
   }, async inspectToken(pid) {
-    if (!Number.isInteger(pid) || pid <= 0) return null;
-    try {
-      const { stdout } = await run('/bin/ps', ['eww', '-p', String(pid), '-o', 'command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
-      const runToken = stdout.match(/(?:^|\s)AUN_RUN_TOKEN=([a-f0-9]+)(?=\s|$)/)?.[1];
-      const profilePath = stdout.match(/(?:^|\s)AUN_PROFILE_DIR=(.*?)(?=\s[A-Za-z_][A-Za-z0-9_]*=|$)/)?.[1]?.trim();
-      return runToken && profilePath ? { runToken, profilePath } : null;
-    } catch { return null; }
-  }, async inspectEnv(pid, names) {
-    if (!Number.isInteger(pid) || pid <= 0) return null;
-    try {
-      const { stdout } = await run('/bin/ps', ['eww', '-p', String(pid), '-o', 'command='], { timeout: 1500, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
-      return Object.fromEntries(names.map(name => [name, stdout.match(new RegExp(`(?:^|\\s)${name}=(.*?)(?=\\s[A-Za-z_][A-Za-z0-9_]*=|$)`))?.[1]?.trim()]).filter(([, value]) => value));
-    } catch { return null; }
-  }, signal };
+    const env = await environment(pid, ['AUN_RUN_TOKEN', 'AUN_PROFILE_DIR']);
+    return env?.AUN_RUN_TOKEN && /^[a-f0-9]+$/.test(env.AUN_RUN_TOKEN) && env.AUN_PROFILE_DIR ? { runToken: env.AUN_RUN_TOKEN, profilePath: env.AUN_PROFILE_DIR } : null;
+  }, inspectEnv: environment, signal };
 }

@@ -106,7 +106,7 @@ test('platform parsers preserve profile spaces and process start identity', asyn
   assert.equal(row.executable, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
   const fields = ['S', '50', '100', ...Array(16).fill('0'), '1234', '0', '20'];
   assert.equal(parseStat(`100 (name with ) space) ${fields.join(' ')}`).startTime, '1234');
-  const adapter = darwinAdapter({ run: async () => ({ stdout: 'command AUN_RUN_TOKEN=ff AUN_PROFILE_DIR=/tmp/path with spaces OTHER=x' }) });
+  const adapter = darwinAdapter({ run: async () => ({ stdout: '100 command AUN_RUN_TOKEN=ff AUN_PROFILE_DIR=/tmp/path with spaces OTHER=x' }) });
   assert.deepEqual(await adapter.inspectToken(100), { runToken: 'ff', profilePath: '/tmp/path with spaces' });
 });
 

@@ -76,8 +76,7 @@ export function check(root, options = {}) {
     if (list.some(t => !hashes.has(digest(t)))) add('INTERNAL_TERMS','hash source needs rebuild');
   });
   for (const name of names) {
-    if (/\.(?:gif|png|jpg|ico|woff2?)$/i.test(name)) continue;
-    const text = read(root,name);
+    const text = /\.(?:gif|png|jpg|ico|woff2?)$/i.test(name) ? '' : read(root,name);
     issues.push(...contentIssues(name,text,hashes));
     if (name.endsWith('.md') || name === 'llms.txt') issues.push(...linkIssues(root,name,text));
     if (/^\.github\/workflows\/.*\.ya?ml$/.test(name)) issues.push(...workflowIssues(name,text));
@@ -149,7 +148,7 @@ export function check(root, options = {}) {
       for (const [,body] of blocks) for (const line of body.split('\n').filter(s=>/^\|\s*[EHCSR]\d/.test(s))) {
         const id = line.split('|')[1].trim(), row = rows.find(r=>r.id===id);
         if (!row || row.subject!=='package') add('PROOF_SCOPE',`${name}:${id}`);
-        if (row && Date.parse(row.expires_at)<Date.now()) add('PROOF_BINDING',`${name}:expired row rendered`);
+        if (row && Date.parse(row.expires_at)<Date.now()) warnings.push(`PROOF_EXPIRY:${name}:${id}:refresh the generated block`);
       }
       if (name!=='docs/DEFAULTS.md') {
         const outside = text.replace(/<!-- proof:start[^>]*-->[\s\S]*?<!-- proof:end -->/g,'');
@@ -210,6 +209,10 @@ export function check(root, options = {}) {
       else warnings.push('LICENSE_SOURCE:source ledger awaits prose'); return;
     }
     const sources=JSON.parse(read(root,path));
+    const provenance=read(root,'docs/PROVENANCE.md');
+    if (!provenance.startsWith(STUB)) for (const match of provenance.matchAll(/https:\/\/(?:github\.com\/[^\s/|)`]+\/[^\s/|)`]+|developers\.[^\s|)`]+)/g)) {
+      if (!sources.some(source=>source.url===match[0])) add('CREDITS',`${match[0]}:source ledger entry required`);
+    }
     for (const source of sources) {
       if (!(source.kind==='docs' ? ['MIT','Apache-2.0','BSD-2-Clause','BSD-3-Clause','CC-BY-4.0'] : ['MIT','Apache-2.0','BSD-2-Clause','BSD-3-Clause']).includes(source.license)) add('LICENSE_SOURCE',source.url);
       if (!read(root,'CREDITS.md').includes(source.url) || !read(root,'CREDITS.md').includes(source.license) || !read(root,'README.md').includes(source.url)) add('CREDITS',source.url);

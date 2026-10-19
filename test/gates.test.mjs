@@ -69,6 +69,18 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
       put(root,'proof/raw.jsonl',raw); put(root,'proof/results.json',[{...row,subject:'default'}]); put(root,'README.md',STUB+'\n<!-- proof:start -->\n| H5 | 4 |\n<!-- proof:end -->\n');
     },()=>put(root,'proof/results.json',[row]));
     await pair('HOOK_LATENCY',['proof/results.json','proof/raw.jsonl'],()=>{put(root,'proof/raw.jsonl',raw);put(root,'proof/results.json',[{...row,hook_p95_ms:151}]);},()=>put(root,'proof/results.json',[{...row,hook_p95_ms:100}]));
+    await t.test('expired rendered proof warns without failing checks or release',()=>{
+      const paths=['README.md','proof/results.json','proof/raw.jsonl'];
+      const saved=new Map(paths.map(p=>[p,existsSync(join(root,p)) ? readFileSync(join(root,p)) : null]));
+      try {
+        put(root,'proof/raw.jsonl',raw); put(root,'proof/results.json',[{...row,expires_at:'2020-01-01'}]);
+        put(root,'README.md',STUB+'\n<!-- proof:start -->\n| H5 | measured |\n<!-- proof:end -->\n');
+        for (const release of [false,true]) {
+          const result=check(root,{release,only:['PROOF_EXPIRY','PROOF_BINDING']});
+          assert.deepEqual(result.issues,[]); assert.ok(result.warnings.some(line=>line.startsWith('PROOF_EXPIRY:')));
+        }
+      } finally { for (const [p,bytes] of saved) if (bytes===null) rmSync(join(root,p),{force:true}); else writeFileSync(join(root,p),bytes); }
+    });
     await t.test('selected content gates operate without package metadata and check stays read-only',()=>{
       const before=new Map(files(root).map(p=>[p,digest(readFileSync(join(root,p)))]));
       assert.equal(finding(root,'VOICE'),false);

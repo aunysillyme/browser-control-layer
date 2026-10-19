@@ -17,6 +17,9 @@ test('privacy and voice have refusing and valid controls', () => {
   assert.ok(contentIssues('note.md',['/','Users','/','fixture','/','private'].join('')).some(s=>s.startsWith('PRIVACY:')));
   assert.ok(contentIssues('note.md',String.fromCharCode(0x2014)).some(s=>s.startsWith('VOICE:')));
   assert.deepEqual(contentIssues('note.md','Auny LLC, AunySillyMe and Claude Code'),[]);
+  const ticket=['A','UN','-','123'].join('');
+  assert.ok(contentIssues(`docs/${ticket}.png`,'').some(s=>s.startsWith('PRIVACY_NAME:')));
+  assert.deepEqual(contentIssues('docs/public-brand.png',''),[]);
 });
 test('renamed tree passes NAME_PARAM and all current checks without local private sources', () => {
   mkdirSync('.test-work',{recursive:true});

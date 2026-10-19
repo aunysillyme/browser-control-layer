@@ -8,17 +8,297 @@
   },
   "name": "browser",
   "on": {
-    "workflow_dispatch": {}
+    "pull_request": {},
+    "push": {
+      "branches": [
+        "main"
+      ]
+    },
+    "workflow_dispatch": {
+      "inputs": {
+        "p0_versions": {
+          "description": "Exact reviewed driver versions as a JSON package-to-version map",
+          "type": "string",
+          "required": false
+        },
+        "puppeteer_version": {
+          "description": "Exact reviewed browser fixture version",
+          "type": "string",
+          "required": false
+        }
+      }
+    }
   },
   "jobs": {
-    "pending": {
+    "p0-linux": {
+      "name": "P0 baseline (Linux)",
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 180,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; import {mkdirSync,writeFileSync,readFileSync} from \"node:fs\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; import {writeArtifacts,summarize} from \"./bench/p0/index.mjs\"; const out=\"proof/runs/p0\"; mkdirSync(out,{recursive:true}); try { const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,JSON.parse(process.env.AUN_P0_VERSIONS||\"{}\")); writeFileSync(out+\"/install-versions.json\",JSON.stringify(versions,null,2)+\"\\n\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"}); } catch(error) { await writeArtifacts(out,[{suite:\"SETUP\",status:\"failed\",error:{name:error.name,message:error.message,stack:error.stack}}],{schemaVersion:1,commit:process.env.GITHUB_SHA},summarize([],40)); throw error; }'",
+          "env": {
+            "AUN_P0_VERSIONS": "${{ inputs.p0_versions || vars.P0_VERSIONS }}"
+          }
+        },
+        {
+          "name": "Measure H1 and ten-minute H2 baselines",
+          "run": "node bench/p0/run.mjs --ci --n 10 --out proof/runs/p0 --versions proof/runs/p0/install-versions.json"
+        },
+        {
+          "name": "Upload complete raw rows and hashes",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "p0-linux-${{ github.sha }}",
+            "path": "proof/runs/p0/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "p0-macos": {
+      "name": "P0 baseline (macOS)",
+      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false",
+      "runs-on": "macos-latest",
+      "timeout-minutes": 180,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; import {mkdirSync,writeFileSync,readFileSync} from \"node:fs\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; import {writeArtifacts,summarize} from \"./bench/p0/index.mjs\"; const out=\"proof/runs/p0\"; mkdirSync(out,{recursive:true}); try { const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,JSON.parse(process.env.AUN_P0_VERSIONS||\"{}\")); writeFileSync(out+\"/install-versions.json\",JSON.stringify(versions,null,2)+\"\\n\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"}); } catch(error) { await writeArtifacts(out,[{suite:\"SETUP\",status:\"failed\",error:{name:error.name,message:error.message,stack:error.stack}}],{schemaVersion:1,commit:process.env.GITHUB_SHA},summarize([],40)); throw error; }'",
+          "env": {
+            "AUN_P0_VERSIONS": "${{ inputs.p0_versions || vars.P0_VERSIONS }}"
+          }
+        },
+        {
+          "name": "Measure H1 and ten-minute H2 baselines",
+          "run": "node bench/p0/run.mjs --ci --n 10 --out proof/runs/p0 --versions proof/runs/p0/install-versions.json"
+        },
+        {
+          "name": "Upload complete raw rows and hashes",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "p0-macos-${{ github.sha }}",
+            "path": "proof/runs/p0/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "read-loopback-linux": {
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "22"
+          }
+        },
+        {
+          "name": "Pinned transport loopback integration",
+          "run": "node --test bench/read/loopback.mjs",
+          "env": {
+            "CI": "true"
+          }
+        }
+      ],
+      "timeout-minutes": 5
+    },
+    "e1-linux": {
       "runs-on": "ubuntu-latest",
       "timeout-minutes": 2,
       "steps": [
         {
-          "run": "echo \"Implementation pending\"; exit 1"
+          "run": "echo \"E1 lands in the next dispatch\"; exit 1"
         }
       ]
+    },
+    "e1-macos": {
+      "runs-on": "macos-latest",
+      "timeout-minutes": 2,
+      "steps": [
+        {
+          "run": "echo \"E1 lands in the next dispatch\"; exit 1"
+        }
+      ],
+      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+    },
+    "lifecycle-linux": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 10,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install reviewed browser fixture version",
+          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
+          "env": {
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+          }
+        },
+        {
+          "name": "Run owned lifecycle and sentinel checks",
+          "run": "node bench/lifecycle/run.mjs --ci",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload lifecycle evidence",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "lifecycle-linux-${{ github.sha }}",
+            "path": "proof/runs/lifecycle/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "h4-linux": {
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 10,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install reviewed browser fixture version",
+          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
+          "env": {
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+          }
+        },
+        {
+          "name": "Run owned lifecycle and sentinel checks",
+          "run": "node bench/lifecycle/run.mjs --ci",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload lifecycle evidence",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "h4-linux-${{ github.sha }}",
+            "path": "proof/runs/lifecycle/",
+            "if-no-files-found": "error"
+          }
+        }
+      ]
+    },
+    "h4-macos": {
+      "runs-on": "macos-latest",
+      "timeout-minutes": 10,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install reviewed browser fixture version",
+          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
+          "env": {
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+          }
+        },
+        {
+          "name": "Run owned lifecycle and sentinel checks",
+          "run": "node bench/lifecycle/run.mjs --ci",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload lifecycle evidence",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "h4-macos-${{ github.sha }}",
+            "path": "proof/runs/lifecycle/",
+            "if-no-files-found": "error"
+          }
+        }
+      ],
+      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
     }
   }
 }

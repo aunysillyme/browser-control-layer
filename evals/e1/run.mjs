@@ -15,7 +15,7 @@ import { startIdleTimer } from '../../src/hygiene/idle-timer.mjs';
 import { runHook } from '../../src/hooks/cli.mjs';
 import { createRuntime, requireCi, wait } from '../../bench/p0/runtime.mjs';
 import { startFixtureServer } from '../../bench/server.mjs';
-import { resourceTotals } from '../../bench/scenarios.mjs';
+import { resourceTotals, settledRows } from '../../bench/scenarios.mjs';
 import { crashMatrix, executeMatrix } from './matrix.mjs';
 
 async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixture:providedFixture,authorizedBenchmark=false,detected=[],items,scriptedHooks=true,idleObservationMs=0}={}) {
@@ -65,7 +65,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
     try {
       if(item.arm==='leased') {
         const child=fork(fileURLToPath(new URL('./worker.mjs',import.meta.url)),[JSON.stringify({state:ledger.root,session,authorizedBenchmark,executable:(await puppeteer.executablePath()),url:fixture.url+(item.ending==='budget'?'/memory':'/list'),budget:item.ending==='budget'})],{stdio:['ignore','pipe','pipe','ipc']});
-        handle.child=child;handle.exited=new Promise(resolve=>child.once('exit',resolve));
+        child.stderr.on('data',chunk=>process.stderr.write(`[owner ${item.id}] ${chunk}`));handle.child=child;handle.exited=new Promise(resolve=>child.once('exit',resolve));
         const ready=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('E1_OWNER_TIMEOUT')),30000);child.once('message',message=>{clearTimeout(timer);message.type==='ready'?resolve(message):reject(new Error(message.error));});child.once('error',reject);child.once('exit',code=>{clearTimeout(timer);reject(new Error(`E1_OWNER_EXIT:${code}`));});});
         handle.record=await ledger.read(ready.id);handle.owner=await adapter.inspect(child.pid);
       } else {
@@ -74,7 +74,8 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         const owner=await adapter.inspect(handle.p0.owner.pid);
         await stampActivity({...base,sessionKey:session,hostPid:owner.pid,hostStartTime:owner.startTime,driverId:driver.id,driverVersion:driver.version});
         const discovery=await discoverRuns({...base,sessionKey:session});
-        assert.equal(discovery.discovered.length,1,`E1_RECIPE: expected one attributed ${driver.id} browser`);
+        const seen=(await adapter.list()).filter(row=>/chrom/i.test(row.executable||'')&&!row.argv?.some(arg=>arg.startsWith('--type='))).map(row=>({pid:row.pid,ppid:row.ppid,exe:basename(row.executable),flags:row.argv.filter(arg=>/^--(remote-debugging|user-data-dir)/.test(arg))}));
+        assert.equal(discovery.discovered.length,1,`E1_RECIPE: expected one attributed ${driver.id} browser; driver ${driver.version}; chrome roots ${JSON.stringify(seen)}`);
         handle.record=discovery.discovered[0];
       }
       await allowedHandle(handle);
@@ -104,8 +105,8 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
     await wait(250);
   }
   async function observe(handle,item) {
-    const table=await adapter.list(), record=await ledger.read(handle.record.id);
-    const owned=table.filter(row=>row.pid===record.pid||record.kind==='leased'&&row.pgid===record.pgid||row.argv?.some(arg=>arg.includes(record.userDataDir)));
+    const record=await ledger.read(handle.record.id);
+    const owned=await settledRows(adapter,table=>table.filter(row=>row.pid===record.pid||record.kind==='leased'&&row.pgid===record.pgid||row.argv?.some(arg=>arg.includes(record.userDataDir))),{wait});
     const profilePresent=await access(record.userDataDir).then(()=>true,()=>false);
     const sentinelAlive=Boolean(await adapter.inspect(sentinel.process().pid));
     const pages=await sentinel.pages();

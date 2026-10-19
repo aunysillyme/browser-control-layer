@@ -26,6 +26,16 @@ adapter.signal = async (target, signal) => {
   if (!allowed || sentinel && Math.abs(target) === sentinel.process().pid) { wrongKills++; throw new Error('WRONG_KILL: target not launched by this lifecycle fixture'); }
   return originalSignal(target, signal);
 };
+const withTimeout = (promise, ms, label) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(`LIFECYCLE_TIMEOUT: ${label}`)), ms).unref())]);
+async function groupDump(label, started) {
+  const members = (await adapter.list()).filter(row => row.pgid === started.record.pgid || row.pid === started.record.pid);
+  const rows = [];
+  for (const row of members) {
+    const token = await adapter.inspectToken(row.pid).catch(() => null);
+    rows.push({ pid: row.pid, ppid: row.ppid, pgid: row.pgid, state: row.state, readable: row.readable, exe: row.executable?.split('/').pop(), type: row.argv?.find(arg => arg.startsWith('--type=')), tokenMatch: token?.runToken === started.record.runToken, profileMatch: token?.profilePath === started.record.userDataDir });
+  }
+  process.stdout.write(`H4 ${label} group: ${JSON.stringify(rows)}\n`);
+}
 async function sentinelProof() {
   assert.ok(await adapter.inspect(sentinel.process().pid), 'sentinel process survives');
   const pages = await sentinel.pages();
@@ -43,9 +53,11 @@ try {
     launched.push(started);
     await new Promise(resolve => setTimeout(resolve, 200));
     await refreshLease(started.record, options);
+    await groupDump(mode, started);
     if (mode === 'orphans') await ledger.update(started.record.id, old => ({ ...old, hostStartTime: 'fixture-owner-ended' }));
     const result = mode === 'cleanup' ? await cleanup({ ...options, apply: true }) : await reap({ ...options, mode });
-    await started.completion;
+    process.stdout.write(`H4 ${mode}: ${JSON.stringify(result)}\n`);
+    await withTimeout(started.completion, 30000, `${mode}: browser ${started.record.pid} still running; cleanup result ${JSON.stringify(result)}`);
     await sentinelProof();
     assert.equal(result.remaining, 0, JSON.stringify(result));
     assert.equal((await ledger.read(started.record.id)).profileRemoved, true, 'throwaway profile removed');
@@ -63,4 +75,5 @@ try {
   await fs.writeFile(join(output, 'rows.jsonl'), text);
   await fs.writeFile(join(output, 'rows.sha256'), createHash('sha256').update(text).digest('hex') + '\n');
   process.stdout.write(`H4: wrongKills=${wrongKills} status=${process.exitCode ? 'failed' : 'passed'}\n`);
+  process.exit(process.exitCode ?? 0);
 }

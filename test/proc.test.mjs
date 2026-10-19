@@ -50,6 +50,14 @@ test('RED unverified group member refuses group signal; GREEN verified group sig
   assert.equal((await signalOwned(f.record, { ...f, group: true })).target, -100);
 });
 
+test('RED zombie group member does not block the group signal; GREEN live unverified member still does', async () => {
+  const f = await leasedFixture();
+  f.processAdapter.state.set(101, processRow(101, { ppid: 100, pgid: 100, state: 'Z', readable: false }));
+  assert.equal((await signalOwned(f.record, { ...f, group: true })).target, -100);
+  f.processAdapter.state.set(102, processRow(102, { ppid: 100, pgid: 100 }));
+  assert.equal((await signalOwned(f.record, { ...f, group: true })).sent, false);
+});
+
 test('RED ownership changes at final read; GREEN stable identity signals', async () => {
   const f = await leasedFixture(); let reads = 0; const original = f.processAdapter.inspect;
   f.processAdapter.inspect = async pid => { const row = await original(pid); if (++reads >= 2 && row) row.startTime = 'reused'; return row; };
@@ -111,6 +119,14 @@ test('Linux CPU percentage uses observed ticks over elapsed time', async () => {
   assert.equal((await adapter.inspect(100)).cpuPercent, null);
   ticks = 60; at = 2000;
   assert.equal((await adapter.inspect(100)).cpuPercent, 50);
+});
+
+test('Linux zombie holds no resident memory; a live process without VmRSS stays unmeasured', async () => {
+  const { linuxAdapter } = await import('../src/proc/platform/linux.mjs');
+  const stat = state => `100 (chrome) ${[state, '50', '100', ...Array(16).fill('0'), '1234', '0', '20'].join(' ')}`;
+  const adapter = state => linuxAdapter({ fs: { async readFile(path) { if (path.endsWith('/stat')) return stat(state); if (path.endsWith('/cmdline')) return ''; return 'Uid: 501\n'; }, async readlink() { throw Object.assign(new Error('gone'), { code: 'ENOENT' }); }, async readdir() { return ['100']; } }, run: async () => ({ stdout: '100' }) });
+  assert.equal((await adapter('Z').inspect(100)).rssBytes, 0);
+  assert.equal((await adapter('S').inspect(100)).rssBytes, null);
 });
 
 test('Windows read-only inventory parses spaces and refuses signaling', async () => {

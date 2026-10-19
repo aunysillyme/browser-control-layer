@@ -1,10 +1,11 @@
 import { owns, sameIdentity, inspect, leaseProof } from './owns.mjs';
 import { samePath, profileArgument, PROFILE } from '../hygiene/profiles.mjs';
 
+// A zombie holds no memory and takes no signal; it is reaped with its parent.
 export async function verifiedGroup(record, options) {
   const { processAdapter } = options;
   let members;
-  try { members = (await processAdapter.list()).filter(row => row.pgid === record.pgid); }
+  try { members = (await processAdapter.list()).filter(row => row.pgid === record.pgid && row.state !== 'Z'); }
   catch { return null; }
   if (!members.length) return [];
   for (const member of members) {

@@ -23,13 +23,15 @@ try {
   if (spec.driver.transport === 'mcp') {
     const args = [...spec.variant.args];
     args.push(spec.driver.id === 'playwright-mcp' ? `--executable-path=${spec.browserPath}` : `--executablePath=${spec.browserPath}`);
+    // GitHub's Ubuntu images block the unprivileged user namespaces Chrome's sandbox needs.
+    if (process.platform === 'linux') args.push(spec.driver.id === 'playwright-mcp' ? '--no-sandbox' : '--chromeArg=--no-sandbox');
     child = spawn(spec.executable, args, { env: process.env, stdio: ['pipe', 'pipe', 'pipe'] });
     client = new McpClient(child);
     const opened = await client.open(url);
     driverPid = child.pid;
     logs = JSON.stringify({ tool: opened.tool });
   } else {
-    const args = ['--session', spec.token, '--executable-path', spec.browserPath];
+    const args = ['--session', spec.token, '--executable-path', spec.browserPath, ...(process.platform === 'linux' ? ['--args', '--no-sandbox'] : [])];
     const opened = await command([...args, 'open', url]);
     logs = opened.output;
   }

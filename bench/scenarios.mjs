@@ -11,13 +11,25 @@ export function resourceTotals(rows) {
   if(bad.length)throw new Error('BENCH_RESOURCES_UNVERIFIED: owned process metrics are incomplete: '+JSON.stringify(bad.map(row=>({pid:row.pid,ppid:row.ppid,rssBytes:row.rssBytes,cpuPercent:row.cpuPercent,readable:row.readable,exe:String(row.argv?.[0]).slice(-40)}))));
   return {rssBytes:rows.reduce((sum,row)=>sum+row.rssBytes,0),cpuPercent:rows.reduce((sum,row)=>sum+row.cpuPercent,0)};
 }
-export async function sampleOwnedResources(adapter, rootPid, { wait = ms => new Promise(resolve => setTimeout(resolve,ms)), intervalMs = 100 } = {}) {
+const measured = row => Number.isFinite(row.rssBytes) && row.rssBytes >= 0 && Number.isFinite(row.cpuPercent) && row.cpuPercent >= 0;
+// A process first seen by the adapter has no CPU interval yet; sample again until every selected row is measured.
+export async function settledRows(adapter, select, { wait = ms => new Promise(resolve => setTimeout(resolve,ms)), intervalMs = 100, attempts = 5 } = {}) {
   await adapter.list();
-  await wait(intervalMs);
-  const table=await adapter.list(), ids=new Set([rootPid]);
-  for(let changed=true;changed;) {changed=false;for(const row of table)if(ids.has(row.ppid)&&!ids.has(row.pid)){ids.add(row.pid);changed=true;}}
-  if(!table.some(row=>row.pid===rootPid))throw new Error('BENCH_RESOURCES_UNVERIFIED: live browser root absent');
-  return resourceTotals(table.filter(row=>ids.has(row.pid)));
+  let rows = [];
+  for(let attempt=0;attempt<attempts;attempt++) {
+    await wait(intervalMs);
+    rows=select(await adapter.list());
+    if(rows.every(measured))break;
+  }
+  return rows;
+}
+export async function sampleOwnedResources(adapter, rootPid, options) {
+  return resourceTotals(await settledRows(adapter, table => {
+    const ids=new Set([rootPid]);
+    for(let changed=true;changed;) {changed=false;for(const row of table)if(ids.has(row.ppid)&&!ids.has(row.pid)){ids.add(row.pid);changed=true;}}
+    if(!table.some(row=>row.pid===rootPid))throw new Error('BENCH_RESOURCES_UNVERIFIED: live browser root absent');
+    return table.filter(row=>ids.has(row.pid));
+  }, options));
 }
 export function quantile(values, q) {
   if (!values.length || values.some(value => !Number.isFinite(value))) throw new Error('BENCH_SAMPLES: finite measurements required');

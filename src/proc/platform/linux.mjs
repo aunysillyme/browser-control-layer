@@ -9,7 +9,7 @@ export function parseStat(text) {
   const pid = Number(text.slice(0, text.indexOf(' ')));
   const fields = text.slice(end + 2).trim().split(/\s+/);
   if (!Number.isInteger(pid) || fields.length < 22) throw new Error('PROCESS_FORMAT: short stat');
-  return { pid, ppid: Number(fields[1]), pgid: Number(fields[2]), startTime: fields[19], cpuTicks: Number(fields[11]) + Number(fields[12]), rssPages: Number(fields[21]) };
+  return { pid, state: fields[0], ppid: Number(fields[1]), pgid: Number(fields[2]), startTime: fields[19], cpuTicks: Number(fields[11]) + Number(fields[12]), rssPages: Number(fields[21]) };
 }
 
 export function linuxAdapter({ fs = { readFile, readdir, readlink }, procRoot = '/proc', signal = process.kill.bind(process), run = exec, now = Date.now } = {}) {
@@ -33,7 +33,7 @@ export function linuxAdapter({ fs = { readFile, readdir, readlink }, procRoot = 
     const at = now(); const previous = samples.get(pid); const rate = await tickRate();
     const cpuPercent = previous?.startTime === row.startTime && at > previous.at && rate ? Math.max(0, (row.cpuTicks - previous.cpuTicks) / rate / ((at - previous.at) / 1000) * 100) : null;
     samples.set(pid, { startTime: row.startTime, cpuTicks: row.cpuTicks, at });
-    return { ...row, executable, argv, uid: Number.isFinite(uid) ? uid : null, rssBytes: Number.isFinite(rssKiB) ? rssKiB * 1024 : null, cpuPercent, readable: Boolean(argv.length && executable && status), reason: values.some(value => value.status === 'rejected') ? 'PROCESS_INSPECT' : undefined };
+    return { ...row, executable, argv, uid: Number.isFinite(uid) ? uid : null, rssBytes: Number.isFinite(rssKiB) ? rssKiB * 1024 : row.state === 'Z' ? 0 : null, cpuPercent, readable: Boolean(argv.length && executable && status), reason: values.some(value => value.status === 'rejected') ? 'PROCESS_INSPECT' : undefined };
   }
   async function inspectToken(pid) {
     try {

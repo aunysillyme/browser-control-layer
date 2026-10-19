@@ -19,7 +19,7 @@ async function finish(reason) {
   if(ending)return;ending=true;
   try {if(reason==='error')throw new Error('E1_SYNTHETIC_ERROR');}
   catch { /* A thrown job error still crosses finally. */ }
-  finally {await cleanup({...options,apply:true});await started.completion;process.disconnect();}
+  finally {const result=await cleanup({...options,apply:true});console.error(JSON.stringify({ending:reason,line:result.line,actions:result.actions}));await started.completion;process.disconnect();}
 }
 process.on('message',message=>{if(message.type==='end')void finish(message.ending);});
 process.on('SIGINT',()=>void finish('SIGINT'));

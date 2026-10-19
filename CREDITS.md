@@ -18,3 +18,5 @@ The pack builds on these creators' published techniques, tools and documentation
 | [aunysillyme/website-build-skill](https://github.com/aunysillyme/website-build-skill) | MIT | 2026-10-18 | Repository template, gates, installer and generated-asset patterns |
 
 Browser Run documentation is credited under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). The pack's documentation reorganizes its session-lifetime and connection guidance into a browser-work recipe; follow the linked upstream documentation for current vendor behavior. Upstream tools retain their own licences. The package's code licence is [MIT](LICENSE).
+
+[StackOneHQ/defender](https://github.com/StackOneHQ/defender) (Apache-2.0) is credited as the planned screen provider named in [PROVENANCE.md](docs/PROVENANCE.md) and [ROADMAP.md](docs/ROADMAP.md). Its integration belongs to a later release.

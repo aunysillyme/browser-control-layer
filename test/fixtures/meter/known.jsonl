@@ -1,0 +1,4 @@
+{"type":"user","message":{"content":"Synthetic example"}}
+{"type":"assistant","message":{"id":"one","usage":{"input_tokens":20,"cache_creation_input_tokens":80,"cache_read_input_tokens":0,"output_tokens":10},"content":[{"type":"text","text":"Synthetic output"}]}}
+{"type":"assistant","message":{"id":"two","usage":{"input_tokens":30,"cache_creation_input_tokens":20,"cache_read_input_tokens":150,"output_tokens":5}}}
+{"type":"assistant","message":{"id":"two","usage":{"input_tokens":30,"cache_creation_input_tokens":20,"cache_read_input_tokens":150,"output_tokens":20}}}

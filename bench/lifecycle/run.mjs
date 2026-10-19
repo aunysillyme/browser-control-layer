@@ -32,7 +32,7 @@ async function groupDump(label, started) {
   const rows = [];
   for (const row of members) {
     const token = await adapter.inspectToken(row.pid).catch(() => null);
-    rows.push({ pid: row.pid, ppid: row.ppid, pgid: row.pgid, state: row.state, readable: row.readable, exe: row.executable?.split('/').pop(), type: row.argv?.find(arg => arg.startsWith('--type=')), tokenMatch: token?.runToken === started.record.runToken, profileMatch: token?.profilePath === started.record.userDataDir });
+    rows.push({ pid: row.pid, ppid: row.ppid, pgid: row.pgid, state: row.state, readable: row.readable, exe: row.executable?.split('/').pop(), type: row.argv?.find(arg => arg.startsWith('--type=')), environ: await fs.readFile(`/proc/${row.pid}/environ`).then(() => 'readable', error => error.code), tokenMatch: token?.runToken === started.record.runToken, profileMatch: token?.profilePath === started.record.userDataDir });
   }
   process.stdout.write(`H4 ${label} group: ${JSON.stringify(rows)}\n`);
 }

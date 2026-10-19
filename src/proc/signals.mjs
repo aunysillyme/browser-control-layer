@@ -2,17 +2,28 @@ import { owns, sameIdentity, inspect, leaseProof } from './owns.mjs';
 import { samePath, profileArgument, PROFILE } from '../hygiene/profiles.mjs';
 
 // A zombie holds no memory and takes no signal; it is reaped with its parent.
+// Chrome helpers can be non-dumpable, so /proc/<pid>/environ is unreadable for them. A helper
+// that shows no token is accepted only when its parent chain reaches the token-verified root.
 export async function verifiedGroup(record, options) {
   const { processAdapter } = options;
-  let members;
-  try { members = (await processAdapter.list()).filter(row => row.pgid === record.pgid && row.state !== 'Z'); }
+  let table;
+  try { table = await processAdapter.list(); }
   catch { return null; }
+  const members = table.filter(row => row.pgid === record.pgid && row.state !== 'Z');
   if (!members.length) return [];
+  const byPid = new Map(table.map(row => [row.pid, row]));
+  const root = byPid.get(record.pid);
+  const descends = member => {
+    for (let at = member, hops = 0; at && hops < 64; at = byPid.get(at.ppid), hops++) if (at.ppid === record.pid) return String(root?.startTime) === String(record.startTime);
+    return false;
+  };
   for (const member of members) {
     const fresh = await inspect(processAdapter, member.pid);
     let token;
     try { token = await processAdapter.inspectToken?.(member.pid); } catch { return null; }
-    if (!sameIdentity(member, fresh) || token?.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir) || fresh.pgid !== record.pgid) return null;
+    if (!sameIdentity(member, fresh) || fresh.pgid !== record.pgid) return null;
+    if (token?.runToken) { if (token.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir)) return null; }
+    else if (member.pid === record.pid || !descends(member)) return null;
     const path = profileArgument(fresh.argv);
     if (path && !samePath(path, record.userDataDir)) return null;
   }
@@ -49,7 +60,7 @@ export async function signalLeasedSurvivors(record, options = {}) {
     if (!saved) return { sent: false, reason: 'member-identity-unrecorded', targets: sent };
     const fresh = await inspect(options.processAdapter, member.pid);
     const token = await options.processAdapter.inspectToken?.(member.pid).catch(() => null);
-    if (!sameIdentity(saved, fresh) || fresh.pgid !== record.pgid || token?.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir) || !(await leaseProof(record, options))) return { sent: false, reason: 'member-identity-unverified', targets: sent };
+    if (!sameIdentity(saved, fresh) || fresh.pgid !== record.pgid || token?.runToken && (token.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir)) || !(await leaseProof(record, options))) return { sent: false, reason: 'member-identity-unverified', targets: sent };
     await options.processAdapter.signal(member.pid, 'SIGTERM');
     sent.push(member.pid);
   }

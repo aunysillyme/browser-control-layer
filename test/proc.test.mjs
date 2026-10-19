@@ -44,10 +44,23 @@ test('RED user Chrome path is refused without filesystem reads; GREEN throwaway 
 
 test('RED unverified group member refuses group signal; GREEN verified group signals group only', async () => {
   const f = await leasedFixture();
-  const child = processRow(101, { ppid: 100, pgid: 100 }); f.processAdapter.state.set(101, child);
+  f.processAdapter.state.set(101, processRow(101, { ppid: 500, pgid: 100 }));
+  assert.equal((await signalOwned(f.record, { ...f, group: true })).sent, false);
+  f.processAdapter.tokens.set(101, { runToken: 'foreign', profilePath: f.record.userDataDir });
   assert.equal((await signalOwned(f.record, { ...f, group: true })).sent, false);
   f.processAdapter.tokens.set(101, { runToken: f.record.runToken, profilePath: f.record.userDataDir });
   assert.equal((await signalOwned(f.record, { ...f, group: true })).target, -100);
+});
+
+test('RED group member outside the verified root refused; GREEN tokenless descendant of the root accepted', async () => {
+  const group = async (...rows) => { const f = await leasedFixture(); for (const row of rows) f.processAdapter.state.set(row.pid, row); return f; };
+  const green = await group(processRow(101, { ppid: 100, pgid: 100 }), processRow(102, { ppid: 101, pgid: 100 }));
+  assert.equal((await signalOwned(green.record, { ...green, group: true })).target, -100);
+  const orphan = await group(processRow(103, { ppid: 1, pgid: 100 }));
+  assert.equal((await signalOwned(orphan.record, { ...orphan, group: true })).sent, false);
+  const reused = await group(processRow(101, { ppid: 100, pgid: 100 }));
+  reused.processAdapter.state.get(100).startTime = 'reused';
+  assert.equal((await signalOwned(reused.record, { ...reused, group: true })).sent, false);
 });
 
 test('RED zombie group member does not block the group signal; GREEN live unverified member still does', async () => {

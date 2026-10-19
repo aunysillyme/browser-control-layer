@@ -11,6 +11,7 @@ import { processAdapter } from '../../src/proc/table.mjs';
 import { reap } from '../../src/hygiene/reap.mjs';
 import { cleanup } from '../../src/hygiene/cleanup.mjs';
 import { discoverRuns } from '../../src/hygiene/sweep.mjs';
+import { ancestors } from '../../src/proc/ancestry.mjs';
 import { startIdleTimer } from '../../src/hygiene/idle-timer.mjs';
 import { runHook } from '../../src/hooks/cli.mjs';
 import { createRuntime, requireCi, wait } from '../../bench/p0/runtime.mjs';
@@ -74,7 +75,7 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         const owner=await adapter.inspect(handle.p0.owner.pid);
         await stampActivity({...base,sessionKey:session,hostPid:owner.pid,hostStartTime:owner.startTime,driverId:driver.id,driverVersion:driver.version});
         const discovery=await discoverRuns({...base,sessionKey:session});
-        const seen=(await adapter.list()).filter(row=>/chrom/i.test(row.executable||'')&&!row.argv?.some(arg=>arg.startsWith('--type='))).map(row=>({pid:row.pid,ppid:row.ppid,exe:basename(row.executable),flags:row.argv.filter(arg=>/^--(remote-debugging|user-data-dir)/.test(arg))}));
+        const table=await adapter.list(),seen=table.filter(row=>/chrom/i.test(row.executable||'')&&row.argv?.some(arg=>arg.startsWith('--user-data-dir'))).map(row=>({pid:row.pid,flags:row.argv.filter(arg=>/^--(remote-debugging|user-data-dir)/.test(arg)),chain:ancestors(row.pid,table).rows.slice(0,5).map(up=>({pid:up.pid,startTime:up.startTime,exe:basename(up.executable||''),args:(up.argv||[]).slice(1,3).map(arg=>arg.slice(-70))}))}));
         assert.equal(discovery.discovered.length,1,`E1_RECIPE: expected one attributed ${driver.id} browser; driver ${driver.version}; chrome roots ${JSON.stringify(seen)}`);
         handle.record=discovery.discovered[0];
       }

@@ -4,14 +4,14 @@ import { PROFILE, profileArgument } from './profiles.mjs';
 import catalog from '../../bench/drivers.json' with { type: 'json' };
 
 const profilePatterns = {
-  'playwright-mcp': /(?:^|\/)ms-playwright\/mcp-[^/]+$/,
+  'playwright-mcp': /(?:^|\/)ms-playwright(?:-mcp)?\/mcp-[^/]+$/,
   'chrome-devtools-mcp': /(?:^|\/)chrome-devtools-mcp\/(?:chrome-profile|chrome-profile-stable)$/,
   'agent-browser': /(?:^|\/)(?:playwright_chromiumdev_profile-[^/]+|agent-browser-[^/]+)$/
 };
 export const RECIPES = Object.freeze(catalog.drivers.map(driver => ({
   id: driver.id, version: driver.version,
   executables: ['chrome', 'chromium', 'Google Chrome', 'Chromium', 'chrome-headless-shell'],
-  automationFlags: [driver.id === 'playwright-mcp' ? '--remote-debugging-pipe' : '--remote-debugging-port=0'],
+  automationFlags: [driver.id === 'agent-browser' ? '--remote-debugging-port=0' : '--remote-debugging-pipe'],
   profileClass: driver.variants[0].profileClass,
   source: driver.source, verification: catalog.verification,
   driverExecutables: [process.execPath],

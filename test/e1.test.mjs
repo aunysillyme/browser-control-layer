@@ -23,6 +23,15 @@ test('pinned recipes refuse unrelated profile and version and allow vendor-owned
   assert.equal(matchRecipe(row,{versions:{[recipe.id]:recipe.version}})?.id,recipe.id);assert.equal(matchRecipe(row,{versions:{[recipe.id]:'0.0.0'}}),null);assert.equal(matchRecipe({...row,argv:['chrome','--remote-debugging-pipe','--user-data-dir=/synthetic/personal']},{versions:{[recipe.id]:recipe.version}}),null);
 });
 
+test('recipes match the pinned drivers as observed on Linux CI and still refuse a neighbor profile',()=>{
+  const match=(id,argv)=>{const recipe=RECIPES.find(row=>row.id===id);return matchRecipe({readable:true,executable:'/synthetic/chrome',argv:['chrome',...argv]},{versions:{[id]:recipe.version}})?.id===id;};
+  assert.equal(match('playwright-mcp',['--remote-debugging-pipe','--user-data-dir=/synthetic/cache/ms-playwright-mcp/mcp-chrome-6ef6a47']),true);
+  assert.equal(match('playwright-mcp',['--remote-debugging-pipe','--user-data-dir=/synthetic/cache/ms-playwright-other/mcp-chrome-6ef6a47']),false);
+  assert.equal(match('chrome-devtools-mcp',['--remote-debugging-pipe','--user-data-dir=/synthetic/.cache/chrome-devtools-mcp/chrome-profile']),true);
+  assert.equal(match('chrome-devtools-mcp',['--remote-debugging-port=0','--user-data-dir=/synthetic/.cache/chrome-devtools-mcp/chrome-profile']),false);
+  assert.equal(match('agent-browser',['--remote-debugging-port=0','--user-data-dir=/synthetic/tmp/agent-browser-chrome-dc7af52c']),true);
+});
+
 test('saved recipe version authorizes idle cleanup only when pinned and matching',async()=>{
   const { leasedFixture }=await import('./fixtures/hygiene/fakes.mjs');
   const { cleanup }=await import('../src/hygiene/cleanup.mjs');

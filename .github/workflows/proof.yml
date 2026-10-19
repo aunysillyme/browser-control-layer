@@ -37,8 +37,8 @@
           }
         },
         {
-          "name": "Install pinned CI drivers",
-          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; const c=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const rows=[...c.drivers,c.browser]; if(rows.some(r=>!/^\\d+\\.\\d+\\.\\d+$/.test(r.version))) throw Error(\"Exact pins required\"); execFileSync(\"npm\",[\"install\",\"--no-save\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...rows.map(r=>r.package+\"@\"+r.version)],{stdio:\"inherit\"});'"
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,process.env.PUPPETEER_VERSION ? {puppeteer:process.env.PUPPETEER_VERSION} : {}); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"});'"
         },
         {
           "name": "Measure fixtures and retain raw observations",

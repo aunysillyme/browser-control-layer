@@ -225,7 +225,7 @@ test('P0 MCP keeps transport failures and refuses requests after driver exit', a
 });
 
 test('P0 exact versions fail closed until pins or reviewed inputs are provided', () => {
-  const versions = Object.fromEntries([...catalog.drivers.map(driver => driver.package), 'puppeteer'].map(name => [name, '1.2.3']));
+  const versions = Object.fromEntries([...catalog.drivers, catalog.browser, ...catalog.tools].map(row => row.package).map(name => [name, '1.2.3']));
   const unpinned={...catalog,drivers:catalog.drivers.map(driver=>({...driver,version:null})),browser:{...catalog.browser,version:null}};
   assert.throws(() => selectVersions(unpinned), /P0_VERSION_UNVERIFIED/);
   assert.ok(Object.values(selectVersions(catalog)).every(value=>/^\d+\.\d+\.\d+$/.test(value)));

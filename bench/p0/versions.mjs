@@ -1,9 +1,9 @@
 export const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
 
 export function selectVersions(catalog, supplied = {}) {
-  const required = [...catalog.drivers.map(driver => driver.package), 'puppeteer'];
-  const pins = Object.fromEntries(catalog.drivers.map(driver => [driver.package, driver.version]));
-  pins.puppeteer = catalog.browser?.version;
+  const rows = [...catalog.drivers, { package: 'puppeteer', version: catalog.browser?.version }, ...(catalog.tools || [])];
+  const required = rows.map(row => row.package);
+  const pins = Object.fromEntries(rows.map(row => [row.package, row.version]));
   for (const name of Object.keys(supplied)) {
     if (!required.includes(name)) throw new Error(`P0_VERSION_PACKAGE: ${name}`);
   }

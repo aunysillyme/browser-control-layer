@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { workflowIssues } from '../src/build/inherited.mjs';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
+import { selectVersions } from '../bench/p0/versions.mjs';
 const valid=()=>({on:{pull_request:{}},permissions:{contents:'read'},concurrency:{group:'test','cancel-in-progress':true},jobs:{check:{'timeout-minutes':2,steps:[{uses:'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1',name:'Check out source (checkout v7.0.1)',with:{'persist-credentials':false}}]}}});
 const issues=w=>workflowIssues('.github/workflows/check.yml',JSON.stringify(w));
 test('workflow security valid control',()=>assert.deepEqual(issues(valid()),[]));
@@ -43,4 +45,32 @@ test('proof refresh write permissions stay scoped to the refresh job',()=>{
   assert.ok(issues(w).some(s=>s.startsWith('WORKFLOW_PERMISSIONS:')));
   w.permissions={contents:'write'};
   assert.ok(workflowIssues('.github/workflows/proof.yml',JSON.stringify(w)).some(s=>s.startsWith('WORKFLOW_PERMISSIONS:')));
+});
+test('every real-browser job installs catalog pins without repository variables',async()=>{
+  const catalog=JSON.parse(readFileSync('bench/drivers.json','utf8'));
+  const versions=selectVersions(catalog);
+  assert.deepEqual(Object.keys(versions).sort(),['@playwright/mcp','agent-browser','chrome-devtools-mcp','playwright','puppeteer','typescript']);
+  const pkg=JSON.parse(readFileSync('package.json','utf8'));
+  assert.equal(pkg.devDependencies.typescript,versions.typescript);
+  const workflow=JSON.parse(readFileSync('.github/workflows/browser.yml','utf8'));
+  for (const suite of ['p0','lifecycle','h4','e1','h-rows','r-rows']) for (const os of ['linux','macos']) assert.ok(workflow.jobs[`${suite}-${os}`]);
+  for (const path of ['.github/workflows/browser.yml','.github/workflows/proof.yml','bench/p0/workflow-jobs.json','bench/lifecycle/workflow-jobs.json']) {
+    const {jobs}=JSON.parse(readFileSync(path,'utf8'));
+    for (const [name,job] of Object.entries(jobs)) {
+      if (name==='read-loopback-linux') continue;
+      const installs=job.steps.filter(step=>step.run?.includes('"install"'));
+      assert.equal(installs.length,1,`${path}: ${name}`);
+      const script=installs[0].run.match(/^node --input-type=module -e '([\s\S]+)'$/)?.[1];
+      assert.ok(script,`${path}: ${name}`);
+      const calls=[];
+      await runInNewContext(`(async()=>{${script.replace(/import \{[^}]+\} from "[^"]+";\s*/g,'')}})()`,{
+        readFileSync,selectVersions,process:{env:{}},mkdirSync(){},writeFileSync(){},
+        execFileSync(command,args){calls.push({command,args});},
+        writeArtifacts(){assert.fail('valid catalog reached setup failure');},summarize(){}
+      });
+      assert.equal(calls.length,1,`${path}: ${name}`);
+      assert.equal(calls[0].command,'npm');
+      assert.deepEqual(Array.from(calls[0].args),['install','--save-dev','--package-lock=false','--no-audit','--no-fund',...Object.entries(versions).map(([name,version])=>`${name}@${version}`)]);
+    }
+  }
 });

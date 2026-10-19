@@ -20,10 +20,10 @@
           }
         },
         {
-          "name": "Install reviewed browser fixture version",
-          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,process.env.PUPPETEER_VERSION ? {puppeteer:process.env.PUPPETEER_VERSION} : {}); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"});'",
           "env": {
-            "PUPPETEER_VERSION": "${{ vars.PUPPETEER_VERSION }}"
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
           }
         },
         {
@@ -65,10 +65,10 @@
           }
         },
         {
-          "name": "Install reviewed browser fixture version",
-          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,process.env.PUPPETEER_VERSION ? {puppeteer:process.env.PUPPETEER_VERSION} : {}); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"});'",
           "env": {
-            "PUPPETEER_VERSION": "${{ vars.PUPPETEER_VERSION }}"
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
           }
         },
         {
@@ -110,10 +110,10 @@
           }
         },
         {
-          "name": "Install reviewed browser fixture version",
-          "run": "node --input-type=module -e 'import {execFileSync} from \"node:child_process\"; const version=process.env.PUPPETEER_VERSION; if(!/^\\d+\\.\\d+\\.\\d+$/.test(version||\"\")) throw new Error(\"Set an exact PUPPETEER_VERSION for the CI fixture\"); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",\"puppeteer@\"+version],{stdio:\"inherit\"});'",
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,process.env.PUPPETEER_VERSION ? {puppeteer:process.env.PUPPETEER_VERSION} : {}); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"});'",
           "env": {
-            "PUPPETEER_VERSION": "${{ vars.PUPPETEER_VERSION }}"
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
           }
         },
         {
@@ -129,6 +129,52 @@
           "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
           "with": {
             "name": "h4-macos-${{ github.sha }}",
+            "path": "proof/runs/lifecycle/",
+            "if-no-files-found": "error"
+          }
+        }
+      ],
+      "if": "github.event_name == 'workflow_dispatch' || github.event.repository.private == false"
+    },
+    "lifecycle-macos": {
+      "runs-on": "macos-latest",
+      "timeout-minutes": 10,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "uses": "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "with": {
+            "node-version": "24"
+          }
+        },
+        {
+          "name": "Install reviewed exact CI driver versions",
+          "run": "node --input-type=module -e 'import {readFileSync} from \"node:fs\"; import {execFileSync} from \"node:child_process\"; import {selectVersions} from \"./bench/p0/versions.mjs\"; const catalog=JSON.parse(readFileSync(\"bench/drivers.json\",\"utf8\")); const versions=selectVersions(catalog,process.env.PUPPETEER_VERSION ? {puppeteer:process.env.PUPPETEER_VERSION} : {}); execFileSync(\"npm\",[\"install\",\"--save-dev\",\"--package-lock=false\",\"--no-audit\",\"--no-fund\",...Object.entries(versions).map(([name,version])=>name+\"@\"+version)],{stdio:\"inherit\"});'",
+          "env": {
+            "PUPPETEER_VERSION": "${{ inputs.puppeteer_version || vars.PUPPETEER_VERSION }}"
+          }
+        },
+        {
+          "name": "Run owned lifecycle and sentinel checks",
+          "run": "node bench/lifecycle/run.mjs --ci",
+          "env": {
+            "CI": "true"
+          }
+        },
+        {
+          "name": "Upload lifecycle evidence",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "lifecycle-macos-${{ github.sha }}",
             "path": "proof/runs/lifecycle/",
             "if-no-files-found": "error"
           }

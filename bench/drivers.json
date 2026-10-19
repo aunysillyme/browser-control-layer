@@ -3,9 +3,8 @@
   "verification": "CI_PENDING",
   "browser": {
     "package": "puppeteer",
-    "version": "24.16.0",
-    "source": "https://github.com/puppeteer/puppeteer",
-    "install": "npm install --save-dev puppeteer@24.16.0"
+    "version": "25.14.0",
+    "source": "https://github.com/puppeteer/puppeteer"
   },
   "drivers": [
     {
@@ -14,7 +13,7 @@
       "command": "playwright-mcp",
       "cliCommands": [],
       "transport": "mcp",
-      "version": "0.0.40",
+      "version": "0.0.83",
       "recipeOwnership": false,
       "source": "https://github.com/microsoft/playwright-mcp",
       "variants": [
@@ -33,8 +32,7 @@
           ],
           "profileClass": "throwaway"
         }
-      ],
-      "install": "npm install --save-dev @playwright/mcp@0.0.40"
+      ]
     },
     {
       "id": "chrome-devtools-mcp",
@@ -42,7 +40,7 @@
       "command": "chrome-devtools-mcp",
       "cliCommands": [],
       "transport": "mcp",
-      "version": "0.8.0",
+      "version": "1.11.0",
       "recipeOwnership": false,
       "source": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
       "variants": [
@@ -53,8 +51,7 @@
           ],
           "profileClass": "driver-persistent"
         }
-      ],
-      "install": "npm install --save-dev chrome-devtools-mcp@0.8.0"
+      ]
     },
     {
       "id": "agent-browser",
@@ -64,7 +61,7 @@
         "agent-browser"
       ],
       "transport": "cli",
-      "version": "0.5.0",
+      "version": "0.39.1",
       "recipeOwnership": false,
       "source": "https://github.com/vercel-labs/agent-browser",
       "variants": [
@@ -73,8 +70,17 @@
           "args": [],
           "profileClass": "throwaway"
         }
-      ],
-      "install": "npm install --save-dev agent-browser@0.5.0"
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "package": "playwright",
+      "version": "1.64.1"
+    },
+    {
+      "package": "typescript",
+      "version": "7.0.2"
     }
   ]
 }

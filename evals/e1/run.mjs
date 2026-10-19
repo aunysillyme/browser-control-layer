@@ -12,6 +12,7 @@ import { reap } from '../../src/hygiene/reap.mjs';
 import { cleanup } from '../../src/hygiene/cleanup.mjs';
 import { discoverRuns } from '../../src/hygiene/sweep.mjs';
 import { ancestors } from '../../src/proc/ancestry.mjs';
+import { verifiedGroup } from '../../src/proc/signals.mjs';
 import { startIdleTimer } from '../../src/hygiene/idle-timer.mjs';
 import { runHook } from '../../src/hooks/cli.mjs';
 import { createRuntime, requireCi, wait } from '../../bench/p0/runtime.mjs';
@@ -83,11 +84,19 @@ async function executeE1({out=resolve('proof/runs/e1'),puppeteer:provided,fixtur
         await stampActivity({...base,sessionKey:session,hostPid:owner.pid,hostStartTime:owner.startTime,driverId:driver.id,driverVersion:driver.version,driverSession:handle.p0.token});
         const discovery=await discoverRuns({...base,sessionKey:session});
         const table=await adapter.list(),seen=table.filter(row=>/chrom/i.test(row.executable||'')&&row.argv?.some(arg=>arg.startsWith('--user-data-dir'))).map(row=>({pid:row.pid,flags:row.argv.filter(arg=>/^--(remote-debugging|user-data-dir)/.test(arg)),chain:ancestors(row.pid,table).rows.slice(0,5).map(up=>({pid:up.pid,startTime:up.startTime,exe:basename(up.executable||''),args:(up.argv||[]).slice(1,3).map(arg=>arg.slice(-70))}))}));
-        for(const row of seen)for(const up of row.chain)if(/agent-browser/.test(up.exe))up.environ=await readFile(`/proc/${up.pid}/environ`,'utf8').then(text=>text.split('\0').filter(entry=>/^AGENT_BROWSER_/.test(entry)).map(entry=>entry.split('=')[0]+(entry.startsWith('AGENT_BROWSER_SESSION=')?`:${entry.slice(22)===handle.p0?.token?'equals-run-token':'other'}`:'')),error=>error.code);
+        for(const row of seen)for(const up of row.chain)if(/agent-browser/.test(up.exe)) {
+          const env=await adapter.inspectEnv(up.pid,['AGENT_BROWSER_SESSION','AGENT_BROWSER_SOCKET_DIR']).catch(()=>null);
+          up.environ=env?Object.keys(env).map(name=>name+(name==='AGENT_BROWSER_SESSION'?`:${env[name]===handle.p0?.token?'equals-run-token':'other'}`:'')):'unverified';
+        }
         assert.equal(discovery.discovered.length,1,`E1_RECIPE: expected one attributed ${driver.id} browser; driver ${driver.version}; chrome roots ${JSON.stringify(seen)}`);
         handle.record=discovery.discovered[0];
       }
       await allowedHandle(handle);
+      if(handle.record.kind==='leased') {
+        const groupDiagnostics=[];
+        await verifiedGroup(handle.record,{...base,groupDiagnostics});
+        process.stdout.write(`E1 ${item.id} group: ${JSON.stringify(groupDiagnostics)}\n`);
+      }
       assert.ok(await adapter.inspect(handle.record.pid),'browser exists before ending');
       return handle;
     } catch(error){error.handle=handle;throw error;}

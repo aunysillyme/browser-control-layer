@@ -26,7 +26,7 @@ async function fixture(platform, race, { survivors = false, late = false } = {})
     if (race.startsWith('exit')) rows.delete(101);
     if (race.startsWith('reuse')) rows.set(101, { ...rows.get(101), startTime: platform === 'darwin' ? 'Mon Oct 19 11:23:45 2026' : '1235', pgid: race === 'reuse-outside' ? 900 : 100 });
     if (race === 'reparent') rows.set(101, { ...rows.get(101), ppid: 900 });
-    if (race === 'arrival') rows.set(103, processRow(103, { startTime, uid: 501, pgid: 100, ppid: 900 }));
+    if (race === 'arrival' || race === 'arrival-owned') rows.set(103, processRow(103, { startTime, uid: 501, pgid: 100, ppid: race === 'arrival-owned' ? 100 : 900 }));
   }
   function inventory() {
     lists++;
@@ -85,6 +85,21 @@ async function fixture(platform, race, { survivors = false, late = false } = {})
 }
 
 for (const platform of ['darwin', 'linux']) {
+  test(`${platform} owned arrival keeps the platform's inspection boundary`, async () => {
+    const f = await fixture(platform, 'arrival-owned');
+    const groupDiagnostics = [];
+    const members = await verifiedGroup(f.record, { ...f, groupDiagnostics });
+    if (platform === 'darwin') {
+      assert.deepEqual(members.map(row => row.pid), [100, 101, 102, 103]);
+      assert.equal(groupDiagnostics.find(row => row.pid === 103).reason, 'helper-ancestry-verified');
+      assert.equal(f.listCount(), 3);
+    } else {
+      assert.equal(members, null);
+      assert.equal(groupDiagnostics.find(row => row.pid === 103).reason, 'member-unobserved');
+      assert.equal(f.listCount(), 2);
+    }
+  });
+
   for (const race of ['exit-before-inspect', 'exit-environment', 'reuse-outside']) test(`GREEN ${platform} ${race} drops the old helper and signals the owned group`, async () => {
     const f = await fixture(platform, race);
     assert.deepEqual((await verifiedGroup(f.record, f))?.map(row => row.pid).sort(), [100, 102]);

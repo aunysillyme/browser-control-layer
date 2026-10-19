@@ -2,28 +2,66 @@ import { owns, sameIdentity, inspect, leaseProof } from './owns.mjs';
 import { samePath, profileArgument, PROFILE } from '../hygiene/profiles.mjs';
 
 // A zombie holds no memory and takes no signal; it is reaped with its parent.
-// Chrome helpers can be non-dumpable, so /proc/<pid>/environ is unreadable for them. A helper
+// Chrome helpers can have unreadable environments. A helper
 // that shows no token is accepted only when its parent chain reaches the token-verified root.
 export async function verifiedGroup(record, options) {
   const { processAdapter } = options;
+  const diagnostics = options.groupDiagnostics || [];
+  const report = (row, verdict, reason, extra = {}) => {
+    const result = { pid: row?.pid, ppid: row?.ppid, pgid: row?.pgid, state: row?.state, startTime: row?.startTime, readable: row?.readable, exe: row?.executable?.split('/').pop(), type: row?.argv?.find(arg => arg.startsWith('--type=')), verdict, reason, ...extra };
+    diagnostics.push(result);
+  };
+  const identityReason = (saved, current) => {
+    if (!current) return 'process-gone';
+    if (!current.readable) return 'identity-unreadable';
+    if (saved.pid !== current.pid) return 'pid-mismatch';
+    if (saved.startTime == null || current.startTime == null) return 'start-time-unreadable';
+    if (String(saved.startTime) !== String(current.startTime)) return 'start-time-changed';
+    if (saved.executable !== current.executable) return 'executable-changed';
+    if (saved.uid == null || current.uid !== saved.uid) return 'uid-changed';
+    return 'identity-unverified';
+  };
   let table;
   try { table = await processAdapter.list(); }
-  catch { return null; }
+  catch (error) { report(null, 'refused', 'initial-list-failed', { error: error.code || 'PROCESS_LIST' }); return null; }
   const initial = table.filter(row => row.pgid === record.pgid && row.state !== 'Z');
-  if (!initial.length) return [];
+  if (!initial.length) { report({ pid: record.pid, pgid: record.pgid }, 'departed', 'group-empty'); return []; }
   const observations = new Map();
-  for (const member of initial) {
+  const observe = async member => {
     const fresh = await inspect(processAdapter, member.pid);
     let token;
     try { token = await processAdapter.inspectToken?.(member.pid); } catch { /* An unreadable environment still needs ancestry proof. */ }
     observations.set(member.pid, { member, fresh, token });
-  }
+  };
+  for (const member of initial) await observe(member);
   // Helpers can exit during inspection. Refresh once to omit departed identities
   // and refuse new or replaced processes that a group signal would also reach.
   try { table = await processAdapter.list(); }
-  catch { return null; }
+  catch (error) {
+    for (const member of initial) report(member, 'refused', 'final-list-failed', { error: error.code || 'PROCESS_LIST' });
+    return null;
+  }
+  // macOS helpers can join while ps inspects the first snapshot. Inspect those
+  // identities once, then refresh again; further arrivals remain unverified.
+  const arrivals = table.filter(row => row.pgid === record.pgid && row.state !== 'Z' && !observations.has(row.pid));
+  if (processAdapter.platform === 'darwin' && arrivals.length) {
+    for (const member of arrivals) await observe(member);
+    try { table = await processAdapter.list(); }
+    catch (error) {
+      for (const { member } of observations.values()) report(member, 'refused', 'final-list-failed', { error: error.code || 'PROCESS_LIST' });
+      return null;
+    }
+  }
   const members = table.filter(row => row.pgid === record.pgid && row.state !== 'Z');
-  for (const { token } of observations.values()) if (token?.runToken && (token.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir))) return null;
+  let refused = false;
+  const foreign = new Map();
+  for (const { member, token } of observations.values()) {
+    if (token?.runToken && (token.runToken !== record.runToken || !samePath(token.profilePath, record.userDataDir))) {
+      foreign.set(member.pid, token.runToken !== record.runToken ? 'foreign-token' : 'token-profile-mismatch');
+      refused = true;
+    }
+    if (!members.some(row => row.pid === member.pid)) report(member, foreign.has(member.pid) ? 'refused' : 'departed', foreign.get(member.pid) || 'left-group');
+  }
   const byPid = new Map(table.map(row => [row.pid, row]));
   const root = members.find(row => row.pid === record.pid);
   const descends = member => {
@@ -32,16 +70,20 @@ export async function verifiedGroup(record, options) {
   };
   for (const member of members) {
     const observed = observations.get(member.pid);
-    if (!observed || !sameIdentity(observed.member, member)) return null;
-    const { fresh, token } = observed;
-    if (!sameIdentity(member, fresh) || fresh.pgid !== record.pgid) return null;
-    if (!token?.runToken && (member.pid === record.pid || !descends(member))) return null;
-    const path = profileArgument(fresh.argv);
-    if (path && !samePath(path, record.userDataDir)) return null;
+    const { fresh, token } = observed || {};
+    let phase = 'initial-to-final';
+    let reason = foreign.get(member.pid) || (!observed ? 'member-unobserved' : !sameIdentity(observed.member, member) ? identityReason(observed.member, member) : null);
+    if (!reason) { phase = 'inspection-to-final'; if (!sameIdentity(member, fresh)) reason = identityReason(member, fresh); }
+    if (!reason && fresh.pgid !== record.pgid) reason = 'group-changed';
+    if (!reason && !token?.runToken && (member.pid === record.pid || !descends(member))) reason = member.pid === record.pid ? 'root-token-unverified' : 'ancestry-unverified';
+    const path = profileArgument(fresh?.argv);
+    if (!reason && path && !samePath(path, record.userDataDir)) reason = 'inspection-profile-mismatch';
     const currentPath = profileArgument(member.argv);
-    if (currentPath && !samePath(currentPath, record.userDataDir)) return null;
+    if (!reason && currentPath && !samePath(currentPath, record.userDataDir)) reason = 'final-profile-mismatch';
+    if (reason) refused = true;
+    report(member, reason ? 'refused' : 'accepted', reason || (token?.runToken ? member.pid === record.pid ? 'root-token-verified' : 'helper-token-verified' : 'helper-ancestry-verified'), { phase, inspectionReason: fresh?.reason, environ: token ? 'readable' : 'unverified', tokenMatch: token?.runToken === record.runToken, profileMatch: token?.profilePath === record.userDataDir });
   }
-  return members;
+  return refused ? null : members;
 }
 
 // Inspection and signal are kept adjacent. An OS PID handle would strengthen this
@@ -53,8 +95,12 @@ export async function signalOwned(record, options = {}) {
   if (!['SIGTERM', 'SIGKILL'].includes(signal)) return { sent: false, reason: 'signal-refused' };
   if ((group || signal === 'SIGKILL') && (proof.class !== 'leased' || proof.profileClass !== PROFILE.THROWAWAY)) return { sent: false, reason: 'force-refused' };
   if (group) {
-    const members = await verifiedGroup(record, options);
-    if (!members?.some(row => row.pid === record.pid)) return { sent: false, reason: 'group-unverified' };
+    const groupDiagnostics = [];
+    const members = await verifiedGroup(record, { ...options, groupDiagnostics });
+    if (!members?.some(row => row.pid === record.pid)) {
+      if (members?.length) groupDiagnostics.push({ pid: record.pid, verdict: 'refused', reason: 'root-absent' });
+      return { sent: false, reason: 'group-unverified', group: groupDiagnostics };
+    }
   }
   const fresh = await owns(record, options);
   if (!fresh.owned) return { sent: false, ...fresh };
@@ -65,8 +111,9 @@ export async function signalOwned(record, options = {}) {
 
 export async function signalLeasedSurvivors(record, options = {}) {
   if (record.kind !== 'leased' || !(await leaseProof(record, options))) return { sent: false, reason: 'lease-proof-unverified' };
-  const members = await verifiedGroup(record, options);
-  if (!members) return { sent: false, reason: 'group-unverified' };
+  const groupDiagnostics = [];
+  const members = await verifiedGroup(record, { ...options, groupDiagnostics });
+  if (!members) return { sent: false, reason: 'group-unverified', group: groupDiagnostics };
   const sent = [];
   for (const member of members) {
     // Persisted identity prevents an unrelated reused PID from entering this set.

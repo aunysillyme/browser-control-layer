@@ -7,6 +7,7 @@ import { startLease, refreshLease } from '../../src/hygiene/lease.mjs';
 import { cleanup } from '../../src/hygiene/cleanup.mjs';
 import { processAdapter } from '../../src/proc/table.mjs';
 import { reap } from '../../src/hygiene/reap.mjs';
+import { verifiedGroup } from '../../src/proc/signals.mjs';
 
 // This file is deliberately outside the default test discovery paths.
 if (process.env.CI !== 'true' || !process.argv.includes('--ci')) throw new Error('CI_REQUIRED: real browser lifecycle runs in CI only');
@@ -28,12 +29,8 @@ adapter.signal = async (target, signal) => {
 };
 const withTimeout = (promise, ms, label) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(`LIFECYCLE_TIMEOUT: ${label}`)), ms).unref())]);
 async function groupDump(label, started) {
-  const members = (await adapter.list()).filter(row => row.pgid === started.record.pgid || row.pid === started.record.pid);
   const rows = [];
-  for (const row of members) {
-    const token = await adapter.inspectToken(row.pid).catch(() => null);
-    rows.push({ pid: row.pid, ppid: row.ppid, pgid: row.pgid, state: row.state, readable: row.readable, exe: row.executable?.split('/').pop(), type: row.argv?.find(arg => arg.startsWith('--type=')), environ: await fs.readFile(`/proc/${row.pid}/environ`).then(() => 'readable', error => error.code), tokenMatch: token?.runToken === started.record.runToken, profileMatch: token?.profilePath === started.record.userDataDir });
-  }
+  await verifiedGroup(started.record, { processAdapter: adapter, groupDiagnostics: rows });
   process.stdout.write(`H4 ${label} group: ${JSON.stringify(rows)}\n`);
 }
 async function sentinelProof() {

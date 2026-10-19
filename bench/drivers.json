@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "verification": "CI_PENDING",
+  "browser": { "package": "puppeteer", "version": null, "source": "https://github.com/puppeteer/puppeteer" },
+  "drivers": [
+    {
+      "id": "playwright-mcp",
+      "package": "@playwright/mcp",
+      "command": "playwright-mcp",
+      "cliCommands": [],
+      "transport": "mcp",
+      "version": null,
+      "recipeOwnership": false,
+      "source": "https://github.com/microsoft/playwright-mcp",
+      "variants": [
+        { "id": "playwright-default", "args": ["--headless"], "profileClass": "driver-persistent" },
+        { "id": "playwright-isolated", "args": ["--headless", "--isolated"], "profileClass": "throwaway" }
+      ]
+    },
+    {
+      "id": "chrome-devtools-mcp",
+      "package": "chrome-devtools-mcp",
+      "command": "chrome-devtools-mcp",
+      "cliCommands": [],
+      "transport": "mcp",
+      "version": null,
+      "recipeOwnership": false,
+      "source": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+      "variants": [
+        { "id": "chrome-devtools", "args": ["--headless"], "profileClass": "driver-persistent" }
+      ]
+    },
+    {
+      "id": "agent-browser",
+      "package": "agent-browser",
+      "command": "agent-browser",
+      "cliCommands": ["agent-browser"],
+      "transport": "cli",
+      "version": null,
+      "recipeOwnership": false,
+      "source": "https://github.com/vercel-labs/agent-browser",
+      "variants": [
+        { "id": "agent-browser", "args": [], "profileClass": "throwaway" }
+      ]
+    }
+  ]
+}

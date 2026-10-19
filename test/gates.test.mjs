@@ -5,6 +5,7 @@ import { join, resolve, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { check, STUB } from '../src/build/validate.mjs';
 import { config } from '../src/config.mjs';
+import { proofBlock } from '../src/build/pack.mjs';
 import { files, digest, generated } from '../src/build/bundle.mjs';
 
 const base=process.cwd();
@@ -49,10 +50,16 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
     },()=>update(root,`${core}/manifest.json`,m=>m.stageRoutes=[{id:'small',assets:['SKILL.md']}]));
     await pair('CLAIM_RUNNERS',['.claude-plugin/plugin.json'],()=>update(root,'.claude-plugin/plugin.json',p=>p.agents=['agents/absent.md']),()=>update(root,'.claude-plugin/plugin.json',p=>p.agents=['agents/aun-runner-browser.md']));
     await pair('CONCEPT_MAP',['docs/PROVENANCE.md'],()=>put(root,'docs/PROVENANCE.md','| Concept | From | Reference | Usable as |\n| Read | unnamed | `absent.md` | prose |\n'),()=>put(root,'docs/PROVENANCE.md','| Concept | From | Reference | Usable as |\n| Read | aun-read | `SKILL.md` | Runner rule |\n'));
-    await pair('DEFAULT_ROW',['src/hygiene/defaults.json'],()=>put(root,'src/hygiene/defaults.json',{idle:{value:300}}),()=>put(root,'src/hygiene/defaults.json',{idle:{value:300,source:'https://example.com/docs',date:'2026-01-01'}}));
-    await pair('SET_DRIFT',['.repo-build/set.lock.json','.repo-build/renderer.mjs'],()=>{
-      put(root,'.repo-build/renderer.mjs','export const version=1;'); put(root,'.repo-build/set.lock.json',{renderer:{path:'.repo-build/renderer.mjs',sha256:'a'.repeat(64)}});
-    },()=>update(root,'.repo-build/set.lock.json',m=>m.renderer.sha256=digest(readFileSync(join(root,'.repo-build/renderer.mjs')))));
+    await pair('DEFAULT_ROW',['src/hygiene/defaults.json'],()=>put(root,'src/hygiene/defaults.json',{idle:{value:300}}),()=>put(root,'src/hygiene/defaults.json',json(base,'src/hygiene/defaults.json')));
+    await pair('DEFAULT_ROW',['src/hygiene/defaults.json','proof/results.json','docs/DEFAULTS.md'],()=>{
+      put(root,'src/hygiene/defaults.json',{waitCap:{value:4,source:{row:'R4'},date:'2026-01-01'}});
+      put(root,'proof/results.json',[{id:'R4',measured_at:'2026-01-01',defaults:{waitCap:3}}]);
+      put(root,'docs/DEFAULTS.md','waitCap from R4');
+    },()=>update(root,'src/hygiene/defaults.json',data=>data.waitCap.value=3));
+    await pair('SET_DRIFT',['.repo-build/set.lock.json','.repo-build/render-set.mjs','.repo-build/set.json'],()=>{
+      put(root,'.repo-build/render-set.mjs','process.exitCode=0;');put(root,'.repo-build/set.json',{version:1,rows:[]});
+      put(root,'.repo-build/set.lock.json',{renderer_sha256:'a'.repeat(64),vendored_sha256:digest(readFileSync(join(root,'.repo-build/set.json')))});
+    },()=>update(root,'.repo-build/set.lock.json',m=>m.renderer_sha256=digest(readFileSync(join(root,'.repo-build/render-set.mjs')))));
     await pair('BUNDLE_DRIFT',[`${core}/manifest.json`,'docs/bundles/sample.md'],()=>{
       update(root,`${core}/manifest.json`,m=>m.bundles={sample:['SKILL.md']}); put(root,'docs/bundles/sample.md','stale');
     },()=>put(root,'docs/bundles/sample.md',generated(root)['docs/bundles/sample.md']));
@@ -63,7 +70,7 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
     await pair('CLAIM_EVIDENCE',['README.md','docs/evidence/content-review.json'],()=>{
       put(root,'README.md','# Read public pages\n'); put(root,'docs/evidence/content-review.json',{files:{'README.md':{sha256:'a'.repeat(64),disposition:'WAIVED'}}});
     },()=>{const ledger=json(base,'docs/evidence/content-review.json'); ledger.files['README.md']={sha256:digest(readFileSync(join(root,'README.md'))),disposition:'WAIVED',reason:'Synthetic gate fixture'};put(root,'docs/evidence/content-review.json',ledger);});
-    const raw='{}\n', row={id:'H5',subject:'package',command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:digest(raw)},measured_at:'2026-01-01',expires_at:'2099-01-01'};
+    const raw='{}\n', row={id:'H5',subject:'package',claim:'Measured fixture',unit:'processes',n:1,median:0,p25:0,p75:0,arms:[{name:'baseline',median:0},{name:'package',median:0}],ratio:null,machine:{os:'fixture',cpu:'fixture',ram_gb:1},versions:{node:'22',chrome:'1',driver:'1',harness:null,model_id:null},command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:digest(raw)},measured_at:'2026-01-01',expires_at:'2099-01-01'};
     await pair('PROOF_BINDING',['README.md'],()=>put(root,'README.md',STUB+'\n40% fewer tokens\n'),()=>put(root,'README.md',STUB+'\nRead public pages.\n'));
     await pair('PROOF_SCOPE',['README.md','proof/results.json','proof/raw.jsonl'],()=>{
       put(root,'proof/raw.jsonl',raw); put(root,'proof/results.json',[{...row,subject:'default'}]); put(root,'README.md',STUB+'\n<!-- proof:start -->\n| H5 | 4 |\n<!-- proof:end -->\n');
@@ -74,7 +81,7 @@ test('repository gates refuse invalid artifacts and accept repaired controls',as
       const saved=new Map(paths.map(p=>[p,existsSync(join(root,p)) ? readFileSync(join(root,p)) : null]));
       try {
         put(root,'proof/raw.jsonl',raw); put(root,'proof/results.json',[{...row,expires_at:'2020-01-01'}]);
-        put(root,'README.md',STUB+'\n<!-- proof:start -->\n| H5 | measured |\n<!-- proof:end -->\n');
+        put(root,'README.md',STUB+'\n'+proofBlock([{...row,expires_at:'2020-01-01'}],{now:0})+'\n');
         for (const release of [false,true]) {
           const result=check(root,{release,only:['PROOF_EXPIRY','PROOF_BINDING']});
           assert.deepEqual(result.issues,[]); assert.ok(result.warnings.some(line=>line.startsWith('PROOF_EXPIRY:')));

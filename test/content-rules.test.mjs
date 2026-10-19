@@ -18,11 +18,11 @@ test('NO_THIRD_PARTY_INSTALL refuses executing a vendor install and allows a pri
 test('PROOF_SCOPE requires a known subject and PROOF_BINDING a complete raw receipt',()=>{
   assert.ok(proofIssues([{id:'X',subject:'personal'}]).issues.some(s=>s.startsWith('PROOF_SCOPE:')));
   assert.ok(proofIssues([{id:'X',subject:'package'}]).issues.some(s=>s.startsWith('PROOF_BINDING:')));
-  const row={id:'H1',subject:'package',command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:'b'.repeat(64)},measured_at:'2026-01-01',expires_at:'2030-01-01'};
+  const row={id:'H1',subject:'package',claim:'Measured fixture',unit:'processes',n:1,median:0,p25:0,p75:0,arms:[{name:'baseline',median:0},{name:'package',median:0}],ratio:null,machine:{os:'fixture',cpu:'fixture',ram_gb:1},versions:{node:'22',chrome:'1',driver:'1',harness:null,model_id:null},command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:'b'.repeat(64)},measured_at:'2026-01-01',expires_at:'2030-01-01'};
   assert.deepEqual(proofIssues([row],Date.parse('2026-02-01')).issues,[]);
 });
 test('SAFETY_CANARY refuses a wrong kill and permits a zero result',()=>{
-  const row={id:'H4',subject:'package',command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:'b'.repeat(64)},measured_at:'2026-01-01',expires_at:'2030-01-01',wrong_kills:1};
+  const row={id:'H4',subject:'package',claim:'Measured fixture',unit:'processes',n:1,median:0,p25:0,p75:0,arms:[{name:'baseline',median:0},{name:'package',median:0}],ratio:null,machine:{os:'fixture',cpu:'fixture',ram_gb:1},versions:{node:'22',chrome:'1',driver:'1',harness:null,model_id:null},command:'bench hygiene',raw:{path:'proof/raw.jsonl',sha256:'b'.repeat(64)},measured_at:'2026-01-01',expires_at:'2030-01-01',wrong_kills:1};
   assert.ok(proofIssues([row]).issues.some(s=>s.startsWith('SAFETY_CANARY:')));
   assert.deepEqual(proofIssues([{...row,wrong_kills:0}],Date.parse('2026-02-01')).issues,[]);
 });

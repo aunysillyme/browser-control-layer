@@ -1,1 +1,26 @@
-<!-- stub: written in the prose step -->
+# browser-control-layer
+
+> Browser control skill pack for AI agents: route web jobs, batch steps, hand clicks to a fresh runner, and close and check what it opens.
+
+Install: `npx browser-control-layer`. Preview: `npx browser-control-layer install --dry-run`.
+
+## Docs
+
+- [Skill](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/skills/browser-control-layer/SKILL.md): Read the invocation steps.
+- [Method](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/docs/METHOD.md): Browser practices and rationale.
+- [Results](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/docs/RESULTS.md): Package measurements and rerun commands.
+
+## Reference
+
+- [Commands](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/README.md): Command entry points and companion credits.
+- [Claude Code](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/adapters/claude-code.md): Plugin and project installation.
+- [Codex](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/adapters/codex.md): Shared agent skill path.
+
+## Optional
+
+- [Remote browser](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/skills/browser-control-layer/playbooks/remote-browser.md): Browser Run recipes.
+- [Zero install](https://github.com/aunysillyme/browser-control-layer/blob/HEAD/adapters/zero-install.md): Paste the method into a chat.
+
+<!-- proof:start (generated; package rows only) -->
+Measurements await a completed benchmark. Rerun: `npx browser-control-layer bench hygiene`.
+<!-- proof:end -->

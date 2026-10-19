@@ -18,7 +18,7 @@ function parse(args) {
     if (!allowed.includes(arg) || flags.has(arg)) throw new Error(`HYGIENE_ARGUMENT: unsupported or repeated option ${arg}`);
     flags.add(arg);
     if (arg === '--sample-ms') { sampleMs = Number(rest[++i]); if (!Number.isFinite(sampleMs) || sampleMs <= 0) throw new Error('HYGIENE_SAMPLE: --sample-ms requires a positive duration'); }
-    if (arg === '--session') { sessionKey = rest[++i]; if (!sessionKey || sessionKey.startsWith('--')) throw new Error('HYGIENE_SESSION: --session requires an id'); }
+    if (arg === '--session' && rest[i+1] && !rest[i+1].startsWith('--')) sessionKey = rest[++i];
   }
   return { command, flags, sessionKey, sampleMs, commandArgs };
 }
@@ -39,6 +39,7 @@ export async function hygieneCommand(args, deps = {}) {
   try { parsed = parse(args); } catch (error) { return { exitCode: 2, output: error.message }; }
   const { command, flags, sessionKey, sampleMs, commandArgs } = parsed;
   const options = { ledger: createLedger(), processAdapter: makeAdapter(), ...deps, sampleMs: sampleMs ?? deps.sampleMs, sessionKey: sessionKey || deps.sessionKey || (deps.env || process.env).AUN_SESSION_KEY };
+  if (flags.has('--session') && !options.sessionKey) return {exitCode:2,output:'HYGIENE_SESSION: --session requires an id or AUN_SESSION_KEY'};
   try {
     if (command === 'doctor' || command === 'top') {
       const result = command === 'doctor' ? await doctor({ ...options, remote: flags.has('--remote') }) : await top(options);

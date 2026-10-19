@@ -16,3 +16,7 @@
 - [unclecode/crawl4ai](https://github.com/unclecode/crawl4ai) (Apache-2.0).
 - [aunysillyme/website-build-skill](https://github.com/aunysillyme/website-build-skill) (MIT).
 <!-- credits:end -->
+
+<!-- proof:start (generated; package rows only) -->
+Measurements await a completed benchmark. Rerun: `npx browser-control-layer bench hygiene`.
+<!-- proof:end -->

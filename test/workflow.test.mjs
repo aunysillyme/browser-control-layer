@@ -29,10 +29,18 @@ test('browser workflow wires required suites and restricts private macOS jobs',(
   }
   assert.ok(workflow.on.pull_request);
   for (const name of ['e1-linux','e1-macos']) {
-    assert.match(workflow.jobs[name].steps[0].run,/E1 lands in the next dispatch/);
-    assert.match(workflow.jobs[name].steps[0].run,/exit 1/);
+    assert.ok(workflow.jobs[name].steps.some(step=>/evals\/e1\/run\.mjs/.test(step.run || '')));
+    assert.ok(workflow.jobs[name].steps.every(step=>!/Implementation pending|next dispatch/.test(step.run || '')));
   }
   assert.ok(workflow.on.workflow_dispatch.inputs.p0_versions);
   assert.ok(workflow.on.workflow_dispatch.inputs.puppeteer_version);
   assert.deepEqual(workflowIssues('.github/workflows/browser.yml',JSON.stringify(workflow)),[]);
+});
+test('proof refresh write permissions stay scoped to the refresh job',()=>{
+  const w=valid();w.jobs.refresh=w.jobs.check;delete w.jobs.check;
+  w.jobs.refresh.permissions={contents:'write','pull-requests':'write'};
+  assert.deepEqual(workflowIssues('.github/workflows/proof.yml',JSON.stringify(w)),[]);
+  assert.ok(issues(w).some(s=>s.startsWith('WORKFLOW_PERMISSIONS:')));
+  w.permissions={contents:'write'};
+  assert.ok(workflowIssues('.github/workflows/proof.yml',JSON.stringify(w)).some(s=>s.startsWith('WORKFLOW_PERMISSIONS:')));
 });

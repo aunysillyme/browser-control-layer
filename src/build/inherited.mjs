@@ -76,12 +76,14 @@ export function workflowIssues(name, text) {
   // token for a short-lived credential, so the publish job of the release workflow needs
   // id-token: write. No other workflow, no other job, and no other permission value.
   const publisher = name === '.github/workflows/release.yml';
+  const proofRefresh = name === '.github/workflows/proof.yml';
   const checkPermissions = (permissions, location, job) => {
     if (!permissions || typeof permissions !== 'object' || Array.isArray(permissions)) issues.push(`WORKFLOW_PERMISSIONS:${location}`);
     else for (const [key, value] of Object.entries(permissions)) {
       if (key === 'contents' && value === 'read') continue;
       if (value === 'none') continue;
       if (publisher && job === 'publish' && key === 'id-token' && value === 'write') continue;
+      if (proofRefresh && job === 'refresh' && ['contents','pull-requests'].includes(key) && value === 'write') continue;
       issues.push(`WORKFLOW_PERMISSIONS:${location}:${key}`);
     }
   };

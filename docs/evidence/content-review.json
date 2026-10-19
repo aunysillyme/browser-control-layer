@@ -1,9 +1,9 @@
 {
   "files": {
     "README.md": {
-      "sha256": "c35d18403c66b8019e99b158e75e6213c5550f59142efb9b013d7866c7cf00e1",
+      "sha256": "c539905e2e438bd0b240080744d0d644892c311cf5c8b252a52af66ce4ce93ef",
       "disposition": "WAIVED",
-      "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+      "reason": "Generated from repository sources; independent content review remains a release task."
     },
     "CREDITS.md": {
       "sha256": "c35d18403c66b8019e99b158e75e6213c5550f59142efb9b013d7866c7cf00e1",
@@ -49,6 +49,21 @@
       "sha256": "524227d25b9c4d50386597a4ee51e3330c7e691b968495149e48efd5b55c6a26",
       "disposition": "WAIVED",
       "reason": "Approved staged instructions and attributed source records; independent content review remains a release task."
+    },
+    "docs/DEFAULTS.md": {
+      "sha256": "679ff0a8563ded71301a2ee24addd3f36188d04e2953c8a1a3ae93a6a93bde2c",
+      "disposition": "WAIVED",
+      "reason": "Generated from repository sources; independent content review remains a release task."
+    },
+    "docs/RESULTS.md": {
+      "sha256": "7a045053813ade7c3cb6494f778be6554fa0af09db33ff1e1fb3c93908c27249",
+      "disposition": "WAIVED",
+      "reason": "Generated from repository sources; independent content review remains a release task."
+    },
+    "docs/INSTALLER.md": {
+      "sha256": "a605d03b36bd6ca599e7fb9733cbe971c5b71017b70d6246907692ad6fd827de",
+      "disposition": "WAIVED",
+      "reason": "Generated from repository sources; independent content review remains a release task."
     }
   }
 }

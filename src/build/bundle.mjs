@@ -2,6 +2,8 @@ import { readFileSync, readdirSync, lstatSync } from 'node:fs';
 import { resolve, relative, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { config } from '../config.mjs';
+import { generatedPack } from './pack.mjs';
+import { generateDefaults } from './defaults.mjs';
 
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export function owned(root, name) {
@@ -38,5 +40,5 @@ export function generated(root) {
       return `<!-- source: ${member} -->\n${read(root, `${core}/${member}`)}`;
     }).join('\n');
   }
-  return output;
+  return {...output,...generateDefaults(root),...generatedPack(root)};
 }

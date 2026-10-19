@@ -1,8 +1,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { config } from '../config.mjs';
 import { files, read, digest, generated, owned } from './bundle.mjs';
 import { linkIssues, workflowIssues, fenced } from './inherited.mjs';
+import { proofBlock } from './pack.mjs';
+import { validateRow } from '../../bench/run.mjs';
 
 export const STUB = '<!-- stub: written in the prose step -->';
 export const CODES = [
@@ -53,6 +56,8 @@ export function contentIssues(name, text, hashes = new Set()) {
 export function proofIssues(rows, now = Date.now()) {
   const issues = [], warnings = [];
   for (const row of rows) {
+    const shape=validateRow(row);
+    if (shape.length) issues.push(`PROOF_BINDING:${row.id}:invalid ${shape.join(',')}`);
     if (!['package','default'].includes(row.subject)) issues.push(`PROOF_SCOPE:${row.id}:invalid subject`);
     if (!row.id || !row.command || !row.raw?.path || !/^[a-f0-9]{64}$/.test(row.raw?.sha256 || '') || !Number.isFinite(Date.parse(row.measured_at)) || !Number.isFinite(Date.parse(row.expires_at))) issues.push(`PROOF_BINDING:${row.id}:incomplete row`);
     if (Date.parse(row.expires_at) < now) warnings.push(`PROOF_EXPIRY:${row.id}:expired, omit from generated blocks`);
@@ -99,7 +104,10 @@ export function check(root, options = {}) {
     }
     for (const route of manifest.stageRoutes) for (const name of route.assets) if (!manifest.assets.some(a=>a.path===name && a.active)) add('MANIFEST',`invalid route ${route.id}`);
   });
-  protect('BUNDLE_DRIFT',() => { for (const [path,body] of Object.entries(generated(root))) if (read(root,path) !== body) add('BUNDLE_DRIFT',path); });
+  protect('BUNDLE_DRIFT',() => {
+    const stripProof=text=>text.replace(/<!-- proof:start[^>]*-->[\s\S]*?<!-- proof:end -->/g,'<!-- generated proof -->');
+    for (const [path,body] of Object.entries(generated(root))) if (stripProof(read(root,path)) !== stripProof(body)) add('BUNDLE_DRIFT',path);
+  });
   protect('PACKAGE_HONESTY',() => {
     if (pkg.type !== 'module' || pkg.engines?.node !== '>=22' || pkg.license !== 'MIT' || pkg.private) add('PACKAGE_HONESTY','metadata');
     if (Object.keys(pkg.dependencies || {}).length || Object.keys(pkg.devDependencies || {}).some(n=>n!=='typescript')) add('PACKAGE_DEPS','runtime or extra development dependencies');
@@ -109,7 +117,8 @@ export function check(root, options = {}) {
     entries.forEach(p=>owned(root,p));
     const allow = pkg.files.map(p=>p.replace(/\/$/,''));
     for (const p of ['bin','src','skills','adapters','hooks','agents','bench','evals','docs','.claude-plugin','README.md','LICENSE']) if (!allow.includes(p)) add('PACKAGE_FILES',p);
-    if (allow.some(p=>p.startsWith('!') && p !== '!docs/*.gif')) add('PACKAGE_FILES','unexpected exclusion');
+    const exclusions=['!docs/*.gif','!bench/lifecycle/**','!bench/read/**','!bench/p0/workflow-jobs.json'];
+    if (allow.some(p=>p.startsWith('!') && !exclusions.includes(p))) add('PACKAGE_FILES','unexpected exclusion');
     if (allow.includes('!docs/*.gif') && allow.indexOf('!docs/*.gif')<allow.indexOf('docs')) add('PACKAGE_FILES','exclusion precedes docs');
     const workflow = JSON.parse(read(root,'.github/workflows/check.yml'));
     if (!workflow.jobs.checks.strategy.matrix.node.some(n=>String(n)==='22') || !workflow.jobs.checks.steps.some(s=>s.with?.['node-version']==='${{ matrix.node }}')) add('PACKAGE_HONESTY','engine floor lacks check matrix');
@@ -148,6 +157,10 @@ export function check(root, options = {}) {
       for (const [,body] of blocks) for (const line of body.split('\n').filter(s=>/^\|\s*[EHCSR]\d/.test(s))) {
         const id = line.split('|')[1].trim(), row = rows.find(r=>r.id===id);
         if (!row || row.subject!=='package') add('PROOF_SCOPE',`${name}:${id}`);
+        if (row?.subject==='package' && !validateRow(row).length) {
+          const expected=proofBlock([row],{now:0}).split('\n').find(text=>text.startsWith(`| ${id} |`));
+          if (line!==expected) add('PROOF_BINDING',`${name}:${id}:rendered values differ`);
+        }
         if (row && Date.parse(row.expires_at)<Date.now()) warnings.push(`PROOF_EXPIRY:${name}:${id}:refresh the generated block`);
       }
       if (name!=='docs/DEFAULTS.md') {
@@ -160,11 +173,15 @@ export function check(root, options = {}) {
   protect('DEFAULT_ROW',() => {
     const path='src/hygiene/defaults.json';
     if (!existsSync(join(root,path))) { warnings.push('DEFAULT_ROW:defaults await hygiene implementation'); return; }
-    const data=JSON.parse(read(root,path));
+    const data=JSON.parse(read(root,path)), proof=JSON.parse(read(root,'proof/results.json'));
     for (const [key,row] of Object.entries(data)) if (row.value != null) {
       if (!row.source || !Number.isFinite(Date.parse(row.date || ''))) add('DEFAULT_ROW',key);
       const doc=read(root,'docs/DEFAULTS.md');
-      const citation=typeof row.source==='string' ? row.source : row.source?.url;
+      const citation=typeof row.source==='string' ? row.source : row.source?.url || row.source?.row;
+      if (row.source?.row) {
+        const measured=proof.find(item=>item.id===row.source.row);
+        if (!measured || measured.defaults?.[key] !== row.value || row.date !== measured.measured_at?.slice(0,10)) add('DEFAULT_ROW',`${key}:measurement binding`);
+      }
       if (!citation || (!doc.startsWith(STUB) && (!doc.includes(key) || !doc.includes(citation)))) add('DEFAULT_ROW',`${key}:documentation binding`);
     }
   });
@@ -200,8 +217,16 @@ export function check(root, options = {}) {
   protect('SET_DRIFT',() => {
     const lock='.repo-build/set.lock.json';
     if (!existsSync(join(root,lock))) { warnings.push('SET_DRIFT:set renderer awaits next implementation'); return; }
-    const data=JSON.parse(read(root,lock));
-    if (!data.renderer?.path || digest(read(root,data.renderer.path))!==data.renderer.sha256) add('SET_DRIFT','renderer hash');
+    const data=JSON.parse(read(root,lock)), renderer='.repo-build/render-set.mjs';
+    if (!existsSync(join(root,renderer))) {
+      if (data.renderer_sha256 != null) add('SET_DRIFT','locked renderer missing');
+      else warnings.push('SET_DRIFT:renderer pending');
+      return;
+    }
+    if (digest(read(root,renderer))!==data.renderer_sha256) { add('SET_DRIFT','renderer hash'); return; }
+    if (digest(read(root,'.repo-build/set.json'))!==data.vendored_sha256) { add('SET_DRIFT','vendored set hash'); return; }
+    const result=spawnSync(process.execPath,[renderer,'--check'],{cwd:root,encoding:'utf8',timeout:10000});
+    if (result.status!==0) add('SET_DRIFT',result.error?.message || result.stderr || result.stdout || 'renderer check failed');
   });
   protect('LICENSE_SOURCE',() => {
     const path='docs/evidence/sources.json';

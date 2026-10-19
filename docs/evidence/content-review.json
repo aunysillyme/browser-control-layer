@@ -1,9 +1,9 @@
 {
   "files": {
     "README.md": {
-      "sha256": "c539905e2e438bd0b240080744d0d644892c311cf5c8b252a52af66ce4ce93ef",
+      "sha256": "55337920a25d36b22396b31b1944dd0a562248bfa9fc737461f8c526acc7648d",
       "disposition": "WAIVED",
-      "reason": "Generated from repository sources; independent content review remains a release task."
+      "reason": "independent content review not run; WAIVED never blocks"
     },
     "CREDITS.md": {
       "sha256": "c35d18403c66b8019e99b158e75e6213c5550f59142efb9b013d7866c7cf00e1",
@@ -64,6 +64,11 @@
       "sha256": "a605d03b36bd6ca599e7fb9733cbe971c5b71017b70d6246907692ad6fd827de",
       "disposition": "WAIVED",
       "reason": "Generated from repository sources; independent content review remains a release task."
+    },
+    "docs/ROADMAP.md": {
+      "sha256": "3effa79c637c559644917a33b83ee3b347028c099a9c77fedb0ded5bc59e5f87",
+      "disposition": "WAIVED",
+      "reason": "independent content review not run; WAIVED never blocks"
     }
   }
 }

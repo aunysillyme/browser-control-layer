@@ -23,7 +23,7 @@ export function attribute(processInfo, table, stamps, recipes = []) {
     if (!host || !host.readable || !stamp.hostStartTime || host.startTime !== stamp.hostStartTime) continue;
     const recipe = recipes.find(row => row.id === stamp.driverId);
     if (!recipe || !recipe.version || stamp.driverVersion !== recipe.version) continue;
-    const driver = chain.rows.find(row => row.pid !== host.pid && (recipe.driverExecutables?.includes(row.executable) || recipe.platformDriverExecutables?.[row.platform]?.includes(row.executable)) && (row.platform === 'darwin' ? row.entryScript && recipe.driverArg?.(row.entryScript) : row.argv?.some(arg => recipe.driverArg?.(arg))));
+    const driver = chain.rows.find(row => row.pid !== host.pid && (recipe.driverExecutables?.includes(row.executable) || recipe.platformDriverExecutables?.[row.platform]?.includes(row.executable)) && (row.platform === 'darwin' ? row.readable && (row.entryScript && recipe.driverArg?.(row.entryScript) || row.executableVerified && recipe.platformDriverTitles?.darwin?.includes(row.processTitle)) : row.argv?.some(arg => recipe.driverArg?.(arg))));
     if (driver) return { ...stamp, driverPid: driver.pid, driverStartTime: driver.startTime };
   }
   return null;

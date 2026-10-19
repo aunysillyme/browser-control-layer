@@ -22,6 +22,7 @@ export const RECIPES = Object.freeze(catalog.drivers.map(driver => ({
   source: driver.source, verification: catalog.verification,
   driverExecutables: [process.execPath],
   platformDriverExecutables: { darwin: ['node'] },
+  platformDriverTitles: { darwin: driver.id === 'chrome-devtools-mcp' ? [driver.command] : [] },
   driverArg: arg => arg === driver.command || arg.replaceAll('\\', '/').includes(`/${driver.package}/`) || arg.replaceAll('\\', '/').endsWith(`/${driver.command}`),
   matchesProfile: profile => profilePatterns[driver.id]?.test(profile.replaceAll('\\', '/')) === true
 })));

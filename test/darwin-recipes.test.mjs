@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { darwinAdapter, parseProcessTable } from '../src/proc/platform/darwin.mjs';
 import { RECIPES, matchRecipe } from '../src/hygiene/recipes.mjs';
@@ -23,7 +24,7 @@ const profiles = {
 
 // The CI dumps show a short Node command, a worker with a JSON browser path,
 // and a launchd-owned native daemon. All process and filesystem effects are fake.
-async function fixture(id) {
+async function fixture(id, { titled = false } = {}) {
   const recipe = RECIPES.find(row => row.id === id), profile = profiles[id];
   const fs = fakeFs(), ledger = createLedger({ root: '/state', fs });
   await ledger.initialize();
@@ -37,11 +38,19 @@ async function fixture(id) {
     [900, line(900, 1, `${executable} --remote-debugging-port=0 --user-data-dir=/user/Library/Application Support/Google/Chrome`)]
   ]);
   const env = new Map([[200, 'AGENT_BROWSER_SESSION=fixture-session AGENT_BROWSER_SOCKET_DIR=/fixture/state']]);
+  const native = { accounting: 'node  ', text: titled ? `p200\0\nftxt\0n${realpathSync(process.execPath)}\0\n` : '', error: null, afterText: () => {} };
+  if (titled) commands.set(200, line(200, 50, 'chrome-devtools-mcp  '));
   const signals = [], closes = [];
   const processAdapter = darwinAdapter({ async run(command, args) {
     const pid = Number(args[args.indexOf('-p') + 1]);
+    if (command === '/usr/sbin/lsof') {
+      if (native.error) throw native.error;
+      native.afterText();
+      return { stdout: native.text };
+    }
     if (args[0] === '-Aww') return { stdout: [...commands.values()].join('\n') };
     if (!commands.has(pid)) throw Object.assign(new Error('gone'), { code: 1, stdout: '' });
+    if (args.at(-1).endsWith('ucomm=')) return { stdout: line(pid, 50, native.accounting) };
     if (args[0] === '-Eww') return { stdout: `${pid} command ${env.get(pid) || ''}` };
     return { stdout: commands.get(pid) };
   }, async signal(pid, signal) {
@@ -59,7 +68,7 @@ async function fixture(id) {
       closes.push(args); commands.delete(200);
     } };
   await stampActivity({ ...options, hostPid: 50, hostStartTime: start, driverId: id, driverVersion: recipe.version, driverSession: 'fixture-session' });
-  return { ...options, fs, commands, env, signals, closes, recipe, profile };
+  return { ...options, fs, commands, env, signals, closes, recipe, profile, native };
 }
 
 test('GREEN Darwin Node entry scripts and worker JSON keep their command boundaries', () => {
@@ -97,7 +106,7 @@ for (const command of [
 });
 
 for (const item of crashMatrix({ drivers: RECIPES }).filter(row => row.arm === 'unleased')) test(`GREEN Darwin ${item.id} ${item.driver} ${item.ending} meets the E1 pass line`, async () => {
-  const f = await fixture(item.driver);
+  const f = await fixture(item.driver, { titled: item.driver === 'chrome-devtools-mcp' });
   const discovery = await discoverRuns(f);
   assert.equal(discovery.discovered.length, 1);
   const record = discovery.discovered[0];
@@ -126,6 +135,45 @@ for (const item of crashMatrix({ drivers: RECIPES }).filter(row => row.arm === '
   assert.deepEqual(outcomeIssues({ ...item, ownedProcesses: owned.length, ownedRssBytes: owned.reduce((sum, row) => sum + row.rssBytes, 0), throwawayDirectories: record.profileClass === 'throwaway' && profilePresent ? 1 : 0, persistentDirectoriesKept: record.profileClass !== 'driver-persistent' || profilePresent, runTabs: owned.length ? null : 0, sentinelAlive: f.commands.has(900), sentinelTabs: f.commands.has(900) ? 2 : 0, wrongKills: f.signals.filter(row => row.pid !== 300).length, idleClosed: !owned.length, timerExited: !f.commands.has(400) }), []);
   assert.deepEqual(f.signals, [{ pid: 300, signal: 'SIGTERM' }]);
   assert.equal(f.closes.length, item.driver === 'agent-browser' ? 1 : 0);
+});
+
+test('GREEN Darwin rewritten title needs independent Node executable evidence in list and inspect', async () => {
+  const f = await fixture('chrome-devtools-mcp', { titled: true });
+  const row = await f.processAdapter.inspect(200);
+  assert.equal(row.executable, process.execPath);
+  assert.equal(row.processTitle, 'chrome-devtools-mcp');
+  assert.equal(row.executableVerified, true);
+  assert.equal(row.entryScript, null);
+  assert.deepEqual(row.argv, [process.execPath]);
+  assert.equal((await f.processAdapter.list()).find(item => item.pid === 200).readable, true);
+  assert.deepEqual(f.signals, []);
+});
+
+for (const [label, mutate] of [
+  ['foreign accounting name', f => { f.native.accounting = 'sh'; }],
+  ['foreign executable', f => { f.native.text = 'p200\0\nftxt\0n/fixture/other\0\n'; }],
+  ['Node mapped after another executable', f => { f.native.text = `p200\0\nftxt\0n/fixture/other\0\nftxt\0n${realpathSync(process.execPath)}\0\n`; }],
+  ['foreign PID', f => { f.native.text = f.native.text.replace('p200', 'p201'); }],
+  ['multiple PIDs', f => { f.native.text += f.native.text.replace('p200', 'p201'); }],
+  ['missing text evidence', f => { f.native.text = ''; }],
+  ['permission denied', f => { f.native.error = Object.assign(new Error('denied'), { code: 'EPERM' }); }],
+  ['missing executable inspector', f => { f.native.error = Object.assign(new Error('missing'), { code: 'ENOENT' }); }],
+  ['PID replaced during executable inspection', f => { f.native.afterText = () => f.commands.set(200, f.commands.get(200).replace(start, 'Mon Oct 19 17:20:13 2026')); }],
+  ['parent changed during executable inspection', f => { f.native.afterText = () => f.commands.set(200, line(200, 900, 'chrome-devtools-mcp')); }],
+  ['title changed during executable inspection', f => { f.native.afterText = () => f.commands.set(200, line(200, 50, 'other')); }],
+  ['title with extra arguments', f => f.commands.set(200, line(200, 50, 'chrome-devtools-mcp --headless'))],
+  ['missing automation flag', f => f.commands.set(300, f.commands.get(300).replace(f.recipe.automationFlags[0], ''))],
+  ['foreign profile', f => f.commands.set(300, f.commands.get(300).replace(f.profile, f.profile + '/neighbor'))],
+  ['version drift', f => f.ledger.updateSession(f.sessionKey, old => ({ ...old, stamps: Object.fromEntries(Object.entries(old.stamps).map(([key, stamp]) => [key, { ...stamp, driverVersion: '0.0.0' }])) }))],
+  ['foreign ancestry', f => f.commands.set(200, line(200, 900, 'chrome-devtools-mcp'))]
+]) test(`RED Darwin rewritten driver title refuses ${label}`, async () => {
+  const f = await fixture('chrome-devtools-mcp', { titled: true });
+  await mutate(f);
+  assert.equal((await discoverRuns(f)).discovered.length, 0);
+  assert.equal((await reap({ ...f, mode: 'idle' })).exitCode, 0);
+  assert.deepEqual(f.signals, []);
+  assert.ok(f.commands.has(300)); assert.ok(f.commands.has(900));
+  assert.ok(f.fs.entries.has(f.profile));
 });
 
 for (const id of Object.keys(profiles)) for (const [label, mutate] of [

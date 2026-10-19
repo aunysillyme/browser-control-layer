@@ -19,7 +19,7 @@ export function parseProcessTable(text) {
     const script=executable && command.slice(executable.length).match(/^\s+(\/[^\s]+\.(?:mjs|cjs|js))(?=\s|$)/)?.[1];
     if (script) argv.splice(1,0,script);
     if (profile) argv.push(`--user-data-dir=${profile}`);
-    return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, executable, argv, command, readable: Boolean(executable) };
+    return { pid: Number(pid), ppid: Number(ppid), pgid: Number(pgid), startTime, uid: Number(uid), cpuPercent: Number(cpuPercent), rssBytes: Number(rssKiB) * 1024, executable, argv, command, identityReadable: true, readable: Boolean(executable) };
   });
 }
 
@@ -42,7 +42,12 @@ export function darwinAdapter({ run = exec, signal = process.kill.bind(process) 
   }
   return { platform: 'darwin', list, async inspect(pid) {
     if (!Number.isInteger(pid) || pid <= 0) return null;
-    try { const result = await run('/bin/ps', ['-ww', '-p', String(pid), '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,command='], { timeout: 1500, maxBuffer: 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } }); return parseProcessTable(result.stdout)[0] || null; }
+    try {
+      const result = await run('/bin/ps', ['-ww', '-p', String(pid), '-o', 'pid=,ppid=,pgid=,lstart=,uid=,%cpu=,rss=,command='], { timeout: 1500, maxBuffer: 1024 * 1024, env: { ...process.env, LC_ALL: 'C' } });
+      const rows = parseProcessTable(result.stdout);
+      if (!rows.length) return null;
+      return rows.length === 1 && rows[0].pid === pid ? rows[0] : { pid, readable: false, reason: 'PROCESS_INSPECT' };
+    }
     catch (error) { if (error.code === 1 && !error.stdout?.trim()) return null; return { pid, readable: false, reason: 'PROCESS_INSPECT' }; }
   }, async inspectToken(pid) {
     const env = await environment(pid, ['AUN_RUN_TOKEN', 'AUN_PROFILE_DIR']);

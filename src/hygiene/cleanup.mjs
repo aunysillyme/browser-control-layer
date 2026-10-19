@@ -52,7 +52,8 @@ async function eligible(record, options, table) {
   const ownerStart = byParent ? record.parentStartTime : record.hostStartTime;
   if (!Number.isInteger(ownerPid)) return false;
   const host = await inspect(options.processAdapter, ownerPid);
-  return !host || (host.readable && ownerStart != null && String(host.startTime) !== String(ownerStart));
+  // Owner exit needs PID/start identity; browser signals still require full ownership proof.
+  return !host || ((host.readable || host.identityReadable === true) && ownerStart != null && String(host.startTime) !== String(ownerStart));
 }
 
 const execute = promisify(execFile);

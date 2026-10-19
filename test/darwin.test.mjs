@@ -16,6 +16,12 @@ const line = (pid, ppid, pgid, command) => `${pid} ${ppid} ${pgid} ${start} 501 
 
 async function fixture() {
   const f = await leasedFixture({ executable, startTime: start, uid: 501 });
+  const userDataDir = `${f.record.userDataDir} with spaces`;
+  await f.fs.rename(f.record.userDataDir, userDataDir);
+  f.record.userDataDir = userDataDir;
+  f.record.argv = [executable, `--user-data-dir=${userDataDir}`];
+  await f.ledger.writeOwner(f.record.id, f.record);
+  await f.ledger.write(f.record);
   const commands = new Map([
     [100, line(100, 50, 100, `${executable} --user-data-dir=${f.record.userDataDir} --headless=new --no-sandbox --remote-debugging-port=0 about:blank`)],
     [101, line(101, 100, 100, `${helper} --type=gpu-process --user-data-dir=${f.record.userDataDir} --no-sandbox`)],
@@ -86,6 +92,71 @@ for (const mode of ['cleanup', 'idle', 'orphans', 'budget']) test(`GREEN Darwin 
   assert.deepEqual([...f.commands.keys()], [900]);
 });
 
+test('GREEN Darwin changed owner start identity qualifies even with a relative owner command', async () => {
+  const f = await fixture();
+  f.commands.set(50, line(50, 1, 50, 'node bench/lifecycle/run.mjs --ci'));
+  await f.ledger.update(f.record.id, old => ({ ...old, hostStartTime: 'fixture-owner-ended' }));
+  const host = await f.processAdapter.inspect(50);
+  assert.equal(host.readable, false);
+  assert.equal(host.startTime, start);
+  const result = await reap({ ...f, mode: 'orphans', termGraceMs: 0 });
+  assert.equal(result.exitCode, 0);
+  assert.deepEqual(result.browsers, { owned: 1, closed: 1 });
+  assert.equal(result.remaining, 0);
+  assert.equal(result.actions[0].profile.removed, true);
+  assert.deepEqual(f.signals, [{ pid: -100, signal: 'SIGTERM' }]);
+  assert.deepEqual([...f.commands.keys()], [900, 50]);
+});
+
+test('GREEN Darwin launchd-reparented leased root closes with its helpers and spaced profile', async () => {
+  const f = await fixture();
+  f.commands.set(100, f.commands.get(100).replace('100 50 100 ', '100 1 100 '));
+  assert.equal((await f.processAdapter.inspect(100)).ppid, 1);
+  assert.equal((await owns(f.record, f)).owned, true);
+  const result = await reap({ ...f, mode: 'orphans', termGraceMs: 0 });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.remaining, 0);
+  assert.equal(result.actions[0].profile.removed, true);
+  assert.equal(f.fs.entries.has(f.record.userDataDir), false);
+  assert.deepEqual(f.signals, [{ pid: -100, signal: 'SIGTERM' }]);
+  assert.deepEqual([...f.commands.keys()], [900]);
+});
+
+for (const [label, command, savedStart] of [
+  ['active relative-command owner', line(50, 1, 50, 'node bench/lifecycle/run.mjs --ci'), start],
+  ['missing saved owner start', line(50, 1, 50, 'node bench/lifecycle/run.mjs --ci'), null],
+  ['unreadable owner identity', '50 unavailable', 'fixture-owner-ended']
+]) test(`RED Darwin ${label} leaves the leased browser alive`, async () => {
+  const f = await fixture();
+  f.commands.set(50, command);
+  await f.ledger.update(f.record.id, old => ({ ...old, hostStartTime: savedStart }));
+  const result = await reap({ ...f, mode: 'orphans', termGraceMs: 0 });
+  assert.equal(result.exitCode, 3);
+  assert.equal(result.actions[0].eligible, false);
+  assert.equal(result.remaining, 1);
+  assert.deepEqual(f.signals, []);
+  assert.ok(f.commands.has(100));
+  assert.ok(f.commands.has(900));
+  assert.ok(f.fs.entries.has(f.record.userDataDir));
+});
+
+test('RED Darwin owner inspection from another PID or multiple rows stays unverified', async () => {
+  for (const stdout of [line(51, 1, 51, '/usr/bin/node'), `${line(50, 1, 50, '/usr/bin/node')}\n${line(51, 1, 51, '/usr/bin/node')}`, null]) {
+    const f = await fixture();
+    const inspect = f.processAdapter.inspect;
+    const ownerAdapter = darwinAdapter({ run: async () => {
+      if (stdout === null) throw Object.assign(new Error('denied'), { code: 'EPERM' });
+      return { stdout };
+    }, signal: () => assert.fail('signal refused') });
+    f.processAdapter.inspect = pid => pid === 50 ? ownerAdapter.inspect(pid) : inspect(pid);
+    await f.ledger.update(f.record.id, old => ({ ...old, hostStartTime: 'fixture-owner-ended' }));
+    const result = await reap({ ...f, mode: 'orphans', termGraceMs: 0 });
+    assert.equal(result.actions[0].eligible, false);
+    assert.deepEqual(f.signals, []);
+    assert.ok(f.commands.has(900));
+  }
+});
+
 test('GREEN Darwin readable helper environments retain the same lease proof', async () => {
   const f = await fixture();
   for (const pid of [101, 102]) f.environments.set(pid, f.environments.get(100));
@@ -110,6 +181,7 @@ for (const [label, mutate] of [
   ['reused root PID', f => f.commands.set(100, f.commands.get(100).replace(start, 'Mon Oct 19 11:23:45 2026'))],
   ['changed group', f => f.commands.set(100, f.commands.get(100).replace('100 50 100 ', '100 50 900 '))],
   ['changed profile', f => f.commands.set(100, f.commands.get(100).replace(f.record.userDataDir, '/tmp/other'))],
+  ['relative root command', f => f.commands.set(100, f.commands.get(100).replace(executable, 'chrome'))],
   ['unreadable process row', f => f.commands.set(100, '100 unavailable')],
   ['missing owner file', f => f.fs.unlink('/state/runs/run1/owner.json')],
   ['unrelated tokenless helper', f => f.commands.set(102, line(102, 900, 100, `${helper} --type=utility`))],

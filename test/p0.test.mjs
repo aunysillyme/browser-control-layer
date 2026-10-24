@@ -80,6 +80,48 @@ test('P0 rejects duplicate, unexpected, and malformed observations; helpers coun
   assert.equal(summarize(rows, expected).line, 'P0: hygiene leads');
 });
 
+test('P0 retries a failed row once, keeps both attempts, and counts the retry', async () => {
+  const adapter = fakeAdapter({ leftovers: false });
+  const cleanup = adapter.cleanup;
+  let refused = 0;
+  adapter.cleanup = async handle => {
+    if (!refused++) throw new Error('P0_IDENTITY_CHANGED: 51273');
+    return cleanup(handle);
+  };
+  const seen = [];
+  const rows = await runP0(adapter, catalog, { repeats: 1, concurrency: 1, onRow: row => { seen.push(row); } });
+  assert.equal(rows.length, 9);
+  assert.equal(seen.length, 9);
+  const failed = rows.filter(row => row.status === 'failed');
+  assert.equal(failed.length, 1);
+  assert.equal(failed[0].attempt, 1);
+  assert.match(failed[0].cleanup_error.message, /P0_IDENTITY_CHANGED/);
+  const retry = rows.find(row => row.attempt === 2);
+  assert.equal(retry.status, 'measured');
+  assert.equal(retry.suite, failed[0].suite);
+  assert.equal(retry.variant, failed[0].variant);
+  assert.equal(summarize(rows, cases(catalog, 1)).status, 'measured');
+});
+
+test('P0 stays inconclusive when the retry fails too, and never retries twice', async () => {
+  const adapter = fakeAdapter({ leftovers: false, failCleanup: true });
+  const rows = await runP0(adapter, catalog, { repeats: 1, concurrency: 1 });
+  assert.equal(rows.length, 16);
+  assert.ok(rows.every(row => row.status === 'failed' && [1, 2].includes(row.attempt)));
+  assert.equal(summarize(rows, cases(catalog, 1)).status, 'failed');
+});
+
+test('P0 summary rejects a third attempt, a measured row followed by a retry, and a missing first attempt', async () => {
+  const expected = cases(catalog, 1);
+  const rows = await runP0(fakeAdapter({ leftovers: false }), catalog, { repeats: 1 });
+  const failedFirst = { ...rows[0], status: 'failed', attempt: 1 };
+  const retried = { ...rows[0], attempt: 2 };
+  assert.equal(summarize([failedFirst, retried, ...rows.slice(1)], expected).status, 'measured');
+  assert.equal(summarize([{ ...rows[0], attempt: 1 }, retried, ...rows.slice(1)], expected).status, 'failed');
+  assert.equal(summarize([failedFirst, retried, { ...rows[0], attempt: 3 }, ...rows.slice(1)], expected).status, 'failed');
+  assert.equal(summarize([retried, ...rows.slice(1)], expected).status, 'failed');
+});
+
 test('P0 keeps complete driver errors and always cleans a launched case', async () => {
   const startFailed = await measure(fakeAdapter({ failStart: true }), item, 'H1');
   assert.equal(startFailed.status, 'failed');

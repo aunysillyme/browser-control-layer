@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 export const IDLE_MS = 600_000;
 export const REPEATS = 10;
+export const MAX_ATTEMPTS = 2;
 
 export function cases(catalog, repeats = REPEATS) {
   if (!Number.isInteger(repeats) || repeats < 1) throw new Error('P0_REPEATS: positive integer required');
@@ -16,7 +17,7 @@ export async function measure(adapter, item, suite, options = {}) {
   let handle;
   const row = {
     schemaVersion: 1, suite, subject: 'baseline', arm: 'baseline',
-    driver: item.driver.id, variant: item.variant.id, repeat: item.repeat,
+    driver: item.driver.id, variant: item.variant.id, repeat: item.repeat, attempt: options.attempt ?? 1,
     measured_at: new Date(start).toISOString(), status: 'failed'
   };
   try {
@@ -69,24 +70,36 @@ export async function runP0(adapter, catalog, options = {}) {
     const queue = [...items];
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
       while (queue.length) {
-        const row = await measure(adapter, queue.shift(), suite, options);
-        rows.push(row);
-        await options.onRow?.(row);
+        const item = queue.shift();
+        let row;
+        // A failed row gets one retry on a fresh profile and owner; every attempt stays in the raw rows.
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS && row?.status !== 'measured'; attempt++) {
+          row = await measure(adapter, item, suite, { ...options, attempt });
+          rows.push(row);
+          await options.onRow?.(row);
+        }
       }
     }));
   }
-  return rows.sort((a, b) => a.suite.localeCompare(b.suite) || a.variant.localeCompare(b.variant) || a.repeat - b.repeat);
+  return rows.sort((a, b) => a.suite.localeCompare(b.suite) || a.variant.localeCompare(b.variant) || a.repeat - b.repeat || (a.attempt ?? 1) - (b.attempt ?? 1));
 }
 
 export function summarize(rows, expected) {
   const expectedCases = Array.isArray(expected) ? expected.length : expected;
-  const complete = Number.isInteger(expectedCases) && expectedCases > 0 && ['H1', 'H2'].every(suite => rows.filter(row => row.suite === suite).length === expectedCases);
-  const keys = rows.map(row => `${row.suite}/${row.variant}/${row.repeat}`);
+  const tries = new Map();
+  for (const row of rows) {
+    const key = `${row.suite}/${row.variant}/${row.repeat}`;
+    tries.set(key, [...(tries.get(key) ?? []), row].sort((x, y) => (x.attempt ?? 1) - (y.attempt ?? 1)));
+  }
+  const keys = [...tries.keys()], finals = [...tries.values()].map(list => list.at(-1));
+  const ordered = [...tries.values()].every(list => list.length <= MAX_ATTEMPTS &&
+    list.every((row, i) => (row.attempt ?? 1) === i + 1 && (i === list.length - 1 || row.status === 'failed')));
+  const complete = Number.isInteger(expectedCases) && expectedCases > 0 && ['H1', 'H2'].every(suite => finals.filter(row => row.suite === suite).length === expectedCases);
   const expectedKeys = Array.isArray(expected) ? new Set(['H1', 'H2'].flatMap(suite => expected.map(item => `${suite}/${item.variant.id}/${item.repeat}`))) : null;
-  const valid = rows.every(row => ['H1', 'H2'].includes(row.suite) && row.status === 'measured' &&
+  const valid = rows.every(row => ['H1', 'H2'].includes(row.suite)) && finals.every(row => row.status === 'measured' &&
     Number.isInteger(row.leftover_browser_roots) && row.leftover_browser_roots >= 0 &&
     Number.isInteger(row.leftover_processes) && row.leftover_processes >= 0);
-  if (!complete || !valid || new Set(keys).size !== keys.length || (expectedKeys && keys.some(key => !expectedKeys.has(key)))) {
+  if (!complete || !valid || !ordered || (expectedKeys && keys.some(key => !expectedKeys.has(key)))) {
     return { status: 'failed', lead: null, line: 'P0 INCONCLUSIVE: complete measured H1 and H2 rows are required' };
   }
   const orphans = rows.filter(row => row.suite === 'H1').some(row => row.leftover_processes > 0);
